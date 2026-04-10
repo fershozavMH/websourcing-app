@@ -26,7 +26,7 @@ El ecosistema se divide en dos partes principales (Microservicios):
 * Credenciales del proyecto de Firebase (`mh-sourcing-sandbox`).
 
 ### 2. Configuración de Variables de Entorno
-Por seguridad, las llaves de Firebase no están en el código fuente. Debes crear un archivo `.env` en la raíz del proyecto y agregar las siguientes variables:
+Por seguridad, las llaves de Firebase no están en el código fuente. Debes crear un archivo `.env.local` en la raíz del proyecto y agregar las siguientes variables:
 
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY="TU_API_KEY"
