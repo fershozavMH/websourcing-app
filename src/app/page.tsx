@@ -3,42 +3,122 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase'; // Combinamos las importaciones
-import { collection, query, orderBy, onSnapshot, getDocs, DocumentData } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { collection, query, orderBy, where, getDocs, limit, startAfter, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import type { Machine, SortOption } from '@/types';
 import Filters from '@/components/Filters';
 import MachineCard from '@/components/MachineCard';
 
+const MACHINES_PER_PAGE = 50;
+
+// === CONFIGURACIÓN LIMPIA DE CATEGORÍAS (Sincronizada con Firebase) ===
+const CATEGORIAS_INICIO = [
+  {
+    id: 'Excavadoras',
+    nombre: 'Excavadoras',
+    icon: <img src="/iconos/exc.webp" alt="Excavadoras" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
+    id: 'Retroexcavadoras',
+    nombre: 'Retroexcavadoras',
+    icon: <img src="/iconos/retro.webp" alt="Retroexcavadoras" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
+    id: 'Topadores',
+    nombre: 'Topadores',
+    icon: <img src="/iconos/topador.webp" alt="Topadores" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
+    id: 'Motoconformadoras',
+    nombre: 'Motoconformadoras',
+    icon: <img src="/iconos/motoconformadora.webp" alt="Motoconformadoras" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />  
+  },
+  {
+    id: 'Camiones Volteo',
+    nombre: 'Camiones Volteo',
+    icon: <img src="/iconos/camion-volteo.webp" alt="Camiones Volteo" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />  
+  },
+  {
+    id: 'Camiones Trompo',
+    nombre: 'Camiones Trompo',
+    icon: <img src="/iconos/trompo.png" alt="Camiones Trompo" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
+    id: 'Camiones Pipa',
+    nombre: 'Camiones Pipa',
+    icon: <img src="/iconos/pipa.png" alt="Camiones Pipa" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
+    id: 'Tractocamiones',
+    nombre: 'Tractocamiones',
+    icon: <img src="/iconos/tractocamion.webp" alt="Tractocamiones" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
+    id: 'Gruas',
+    nombre: 'Grúas',
+    icon: <img src="/iconos/grua.webp" alt="Grúas" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+    
+  },
+  {
+    id: 'Elevadores',
+    nombre: 'Elevadores',
+    icon: <img src="/iconos/elevador.webp" alt="Elevadores" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+    
+  },
+  {
+    id: 'Rough Terrain',
+    nombre: 'Rough Terrain',
+    icon: <img src="/iconos/rough-terrain.webp" alt="Rough Terrain" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+    
+  },
+  {
+    id: 'All Terrain',
+    nombre: 'All Terrain',
+    icon: <img src="/iconos/all-terrain.webp" alt="All Terrain" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+    
+  },
+  
+  {
+    id: 'ALL',
+    nombre: 'Ver Todo',
+    icon: (
+      <svg className="w-16 h-16 text-slate-700 transition-all duration-300 group-hover:scale-110 group-hover:text-orange-500 mb-6" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 12h16v16H12zM36 12h16v16H36zM12 36h16v16H12zM36 36h16v16H36z"/>
+      </svg>
+    )
+  }
+];
+
 export default function Home() {
-  // ================= ESTADOS DE AUTENTICACIÓN =================
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
 
-  // ================= ESTADOS DE DATOS =================
+  const [activeView, setActiveView] = useState<'home' | 'catalog'>('home');
+
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [searchValue, setSearchValue] = useState('');
   const [categoryValue, setCategoryValue] = useState('ALL');
   const [priceValue, setPriceValue] = useState('');
+  const [minYearValue, setMinYearValue] = useState('');
+  const [maxYearValue, setMaxYearValue] = useState('');
+  const [maxHoursValue, setMaxHoursValue] = useState('');
   const [sortValue, setSortValue] = useState<SortOption>('recent');
 
-  // ================= EFECTOS Y LÓGICA =================
-
-  // 1. Escudo de Seguridad
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setIsAuthenticated(true);
-      } else {
-        router.push('/login');
-      }
+      if (user) setIsAuthenticated(true);
+      else router.push('/login');
       setAuthChecking(false);
     });
-
     return () => unsubscribeAuth();
   }, [router]);
 
@@ -47,90 +127,139 @@ export default function Home() {
     router.push('/login');
   };
 
-  const categories = useMemo(() => {
-    const cats = [...new Set(machines.map(m => m.categoria_tarea).filter(Boolean))];
-    return cats.sort();
-  }, [machines]);
-
-  // 2. Escucha en tiempo real (Catálogo)
-  useEffect(() => {
-    const q = query(collection(db, 'maquinaria_aprobada'), orderBy('timestamp', 'desc'));
-    
-    const unsubscribe = onSnapshot(
-      q,
-      { includeMetadataChanges: true },
-      (snapshot) => {
-        const newMachines: Machine[] = [];
-        snapshot.forEach((doc) => {
-          const data = doc.data() as DocumentData;
-          newMachines.push({ id: doc.id, ...data } as Machine);
-        });
-        
-        setMachines(newMachines);
-        setLoading(false);
-        setLastUpdate(new Date());
-      },
-      (error) => {
-        console.error('Error en tiempo real:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  // 3. Botón de refresco manual
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
+  // ==========================================
+  // CONSULTA LIMPIA Y DIRECTA A FIREBASE
+  // ==========================================
+  const fetchInitialData = useCallback(async (categoryToFetch: string) => {
+    setLoading(true);
+    setMachines([]);
     try {
-      const q = query(collection(db, 'maquinaria_aprobada'), orderBy('timestamp', 'desc'));
+      const colRef = collection(db, 'maquinaria_aprobada');
+      let q;
+      
+      // Ahora es una consulta hermosa y sencilla
+      if (categoryToFetch === 'ALL') {
+        q = query(colRef, orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE));
+      } else {
+        q = query(colRef, where('categoria_tarea', '==', categoryToFetch), orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE));
+      }
+      
       const snapshot = await getDocs(q); 
       
       const newMachines: Machine[] = [];
       snapshot.forEach((doc) => {
-        const data = doc.data() as DocumentData;
-        newMachines.push({ id: doc.id, ...data } as Machine);
+        newMachines.push({ id: doc.id, ...(doc.data() as DocumentData) } as Machine);
       });
       
       setMachines(newMachines);
       setLastUpdate(new Date());
+      
+      if (snapshot.docs.length > 0) {
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === MACHINES_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
     } catch (error) {
-      console.error("Error al forzar la actualización:", error);
+      console.error("Error al cargar datos:", error);
     } finally {
+      setLoading(false);
       setIsRefreshing(false);
     }
   }, []);
 
+  const handleSelectCategory = (catId: string) => {
+    setCategoryValue(catId);
+    setActiveView('catalog');
+    fetchInitialData(catId);
+  };
+
+  const goHome = () => {
+    setActiveView('home');
+    setMachines([]);
+  };
+
+  const loadMoreData = async () => {
+    if (!lastDoc) return;
+    setLoadingMore(true);
+    try {
+      const colRef = collection(db, 'maquinaria_aprobada');
+      let q;
+      
+      if (categoryValue === 'ALL') {
+        q = query(colRef, orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(MACHINES_PER_PAGE));
+      } else {
+        q = query(colRef, where('categoria_tarea', '==', categoryValue), orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(MACHINES_PER_PAGE));
+      }
+      
+      const snapshot = await getDocs(q); 
+      
+      const newMachines: Machine[] = [];
+      snapshot.forEach((doc) => {
+        newMachines.push({ id: doc.id, ...(doc.data() as DocumentData) } as Machine);
+      });
+      
+      setMachines((prev) => [...prev, ...newMachines]); 
+      
+      if (snapshot.docs.length > 0) {
+        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+        setHasMore(snapshot.docs.length === MACHINES_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Error al cargar más datos:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Creador Dinámico de Categorías para el Dropdown
+  const dropdownCategories = useMemo(() => {
+    const baseCats = CATEGORIAS_INICIO.filter(c => c.id !== 'ALL').map(c => c.id);
+    const loadedCats = machines.map(m => m.categoria_tarea).filter(Boolean);
+    const uniqueCats = [...new Set([...baseCats, ...loadedCats])];
+    return uniqueCats.sort();
+  }, [machines]);
+
+  // Filtro en memoria (también súper simplificado)
   const filteredMachines = useMemo(() => {
     const term = searchValue.toLowerCase();
-    const maxPrice = priceValue ? parseFloat(priceValue) : Infinity;
+    const maxP = priceValue ? parseFloat(priceValue) : Infinity;
+    const minY = minYearValue ? parseInt(minYearValue) : 0;
+    const maxY = maxYearValue ? parseInt(maxYearValue) : 9999;
+    const maxH = maxHoursValue ? parseInt(maxHoursValue) : Infinity;
     
     let filtered = machines.filter(machine => {
       const matchesSearch = machine.titulo.toLowerCase().includes(term);
+      
+      // Filtro de categoría directo
       const matchesCategory = categoryValue === 'ALL' || machine.categoria_tarea === categoryValue;
-      const matchesPrice = machine.precio <= maxPrice;
-      return matchesSearch && matchesCategory && matchesPrice;
+      
+      const matchesPrice = machine.precio <= maxP;
+      const matchesYear = machine.año >= minY && machine.año <= maxY;
+      
+      let matchesHours = true;
+      if (maxH !== Infinity) {
+        if ('uso_bomba' in machine && 'uso_motor' in machine) {
+           matchesHours = (machine.uso_bomba || 0) <= maxH || (machine.uso_motor || 0) <= maxH;
+        } else {
+           matchesHours = (machine.uso || 0) <= maxH;
+        }
+      }
+
+      return matchesSearch && matchesCategory && matchesPrice && matchesYear && matchesHours;
     });
 
     switch (sortValue) {
-      case 'price_asc':
-        filtered.sort((a, b) => a.precio - b.precio);
-        break;
-      case 'price_desc':
-        filtered.sort((a, b) => b.precio - a.precio);
-        break;
-      case 'year_desc':
-        filtered.sort((a, b) => b.año - a.año);
-        break;
+      case 'price_asc': filtered.sort((a, b) => a.precio - b.precio); break;
+      case 'price_desc': filtered.sort((a, b) => b.precio - a.precio); break;
+      case 'year_desc': filtered.sort((a, b) => b.año - a.año); break;
     }
 
     return filtered;
-  }, [machines, searchValue, categoryValue, priceValue, sortValue]);
+  }, [machines, searchValue, categoryValue, priceValue, minYearValue, maxYearValue, maxHoursValue, sortValue]);
 
-
-  // ================= BARRERAS DE RENDERIZADO =================
-  
-  // Si está verificando la sesión, mostramos pantalla de carga naranja
   if (authChecking) {
     return (
       <div className="min-h-screen bg-slate-900 flex justify-center items-center">
@@ -139,74 +268,126 @@ export default function Home() {
     );
   }
 
-  // Si no está logueado, no renderizamos nada (el useEffect ya lo está mandando a /login)
   if (!isAuthenticated) return null;
 
-
-  // ================= RENDERIZADO PRINCIPAL (AUTENTICADO) =================
   return (
-    <div className="min-h-screen bg-slate-100 font-sans pb-10">
+    <div className="min-h-screen bg-slate-100 font-sans pb-20">
       
-      {/* NAVBAR CON BOTÓN DE CERRAR SESIÓN */}
       <nav className="bg-slate-900 text-white p-6 shadow-md border-b-4 border-orange-500 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
-            <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
+            <button onClick={goHome} className="text-3xl font-black tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity text-left">
               WebSourcing <span className="text-orange-500">Live</span>
-            </h1>
+            </button>
             <p className="text-slate-400 text-sm mt-1">Inteligencia de Adquisición para Machinery Hunters</p>
           </div>
-          
           <div className="flex items-center gap-4">
-            <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-3">
-              <span className="text-slate-300 font-medium">Inventario Rentable:</span> 
-              <span className="text-orange-400 font-bold text-2xl">{filteredMachines.length}</span>
-            </div>
-            
-            <button 
-              onClick={handleLogout}
-              className="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-red-500 border border-slate-700 hover:border-red-600 px-3 py-2 rounded transition-colors"
-            >
-              Cerrar Sesión
+            {activeView === 'catalog' && (
+              <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-3">
+                <span className="text-slate-300 font-medium hidden md:inline">Mostrando:</span> 
+                <span className="text-orange-400 font-bold text-2xl">{filteredMachines.length}</span>
+              </div>
+            )}
+            <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-red-500 border border-slate-700 hover:border-red-600 px-3 py-2 rounded transition-colors">
+              Salir
             </button>
           </div>
         </div>
       </nav>
 
-      <Filters
-        categories={categories}
-        onSearchChange={setSearchValue}
-        onCategoryChange={setCategoryValue}
-        onPriceChange={setPriceValue}
-        onSortChange={setSortValue}
-        onRefresh={handleRefresh}
-        searchValue={searchValue}
-        categoryValue={categoryValue}
-        priceValue={priceValue}
-        sortValue={sortValue}
-        isRefreshing={isRefreshing}
-        lastUpdate={lastUpdate}
-      />
-
-      <main className="max-w-7xl mx-auto px-6 mt-2">
-        {loading ? (
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
-            <p className="text-slate-500 mt-4 font-medium">Extrayendo datos de la nube...</p>
+      {/* ================= VISTA 1: INICIO ================= */}
+      {activeView === 'home' && (
+        <main className="max-w-6xl mx-auto px-6 mt-12 mb-20 animate-fade-in">
+          <div className="text-center mb-16 border-b border-slate-200 pb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
+              Inventario de Equipos 
+            </h2>
+            <p className="text-slate-500">Selecciona una categoría para explorar el mercado</p>
           </div>
-        ) : filteredMachines.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-xl border border-slate-200 mt-4 shadow-sm">
-            <h3 className="text-xl font-bold text-slate-700">No se encontraron equipos</h3>
-            <p className="text-slate-500 mt-2">Intenta ajustar los filtros de búsqueda o categoría.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-            {filteredMachines.map((machine) => (
-              <MachineCard key={machine.id} machine={machine} />
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-16 gap-x-8">
+            {CATEGORIAS_INICIO.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => handleSelectCategory(cat.id)}
+                className="flex flex-col items-center justify-center text-center group cursor-pointer"
+              >
+                <div className="h-36 flex items-center justify-center w-full">
+                  {cat.icon}
+                </div>
+                <span className="mt-2 text-sm md:text-base font-bold text-slate-700 group-hover:text-orange-600 transition-colors">
+                  {cat.nombre}
+                </span>
+              </button>
             ))}
           </div>
-        )}
-      </main>
+        </main>
+      )}
+
+      {/* ================= VISTA 2: CATÁLOGO ================= */}
+      {activeView === 'catalog' && (
+        <>
+          <Filters
+            categories={dropdownCategories} 
+            onSearchChange={setSearchValue}
+            onCategoryChange={(val) => {
+              setCategoryValue(val);
+              fetchInitialData(val); 
+            }}
+            onPriceChange={setPriceValue}
+            onMinYearChange={setMinYearValue}
+            onMaxYearChange={setMaxYearValue}
+            onMaxHoursChange={setMaxHoursValue}
+            onSortChange={setSortValue}
+            onRefresh={() => fetchInitialData(categoryValue)}
+            searchValue={searchValue}
+            categoryValue={categoryValue}
+            priceValue={priceValue}
+            minYearValue={minYearValue}
+            maxYearValue={maxYearValue}
+            maxHoursValue={maxHoursValue}
+            sortValue={sortValue}
+            isRefreshing={isRefreshing}
+            lastUpdate={lastUpdate}
+          />
+
+          <main className="max-w-7xl mx-auto px-6 mt-2">
+            {loading ? (
+              <div className="text-center py-20">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
+                <p className="text-slate-500 mt-4 font-medium">Conectando con Base de Datos...</p>
+              </div>
+            ) : filteredMachines.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-xl border border-slate-200 mt-4 shadow-sm">
+                <h3 className="text-xl font-bold text-slate-700">No hay coincidencias</h3>
+                <p className="text-slate-500 mt-2">Intenta limpiar los filtros o haz clic en "Cargar más inventario antiguo".</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                {filteredMachines.map((machine) => (
+                  <MachineCard key={machine.id} machine={machine} />
+                ))}
+              </div>
+            )}
+
+            {!loading && hasMore && filteredMachines.length > 0 && (
+              <div className="flex justify-center mt-12 mb-8">
+                <button
+                  onClick={loadMoreData}
+                  disabled={loadingMore}
+                  className={`py-3 px-8 rounded-full font-bold shadow-md transition-all flex items-center gap-2 ${
+                    loadingMore 
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
+                    : 'bg-slate-800 text-white hover:bg-slate-700 hover:shadow-lg'
+                  }`}
+                >
+                  {loadingMore ? 'Descargando datos históricos...' : '⬇️ Cargar más inventario antiguo'}
+                </button>
+              </div>
+            )}
+          </main>
+        </>
+      )}
     </div>
   );
 }
