@@ -8,6 +8,7 @@ export interface Machine {
   uso_motor?: number;
   ubicacion: string;
   categoria_tarea: string;
+  origen_tarea?: string;
   imagenes: string[];
   url: string;
   telefono_vendedor: string;

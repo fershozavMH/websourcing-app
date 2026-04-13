@@ -14,6 +14,8 @@ interface FiltersProps {
   onRefresh: () => void;
   searchValue: string;
   categoryValue: string;
+  subCategoryValue: string;
+  onSubCategoryChange: (value: string) => void;
   priceValue: string;
   minYearValue: string;
   maxYearValue: string;
@@ -35,6 +37,8 @@ export default function Filters({
   onRefresh,
   searchValue,
   categoryValue,
+  subCategoryValue,
+  onSubCategoryChange,
   priceValue,
   minYearValue,
   maxYearValue,
@@ -43,6 +47,23 @@ export default function Filters({
   isRefreshing,
   lastUpdate,
 }: FiltersProps) {
+
+  // Opciones de Grúas
+  const OPCIONES_GRUAS = [
+    { label: "Todas las Grúas", val: "ALL" },
+    { label: "Titán 17-20 Tons", val: "Gruas Titanes 17 - 20 Tons" },
+    { label: "Titán 22-26 Tons", val: "Gruas Titanes 22 - 26 Tons" },
+    { label: "Titán 28-35 Tons", val: "Gruas Titanes 28 - 35 Tons" },
+    { label: "Articulada 10-12 Tons", val: "Gruas Articuladas 10 - 12 Tons" },
+  ];
+
+  // Opciones de Bombas (Conectadas al scraper_bombas)
+  const OPCIONES_BOMBAS = [
+    { label: "Todas las Bombas", val: "ALL" },
+    { label: "28 - 32 Metros", val: "Bomba de Concreto 28-32m" },
+    { label: "34 - 38 Metros", val: "Bomba de Concreto 34-38m" },
+  ];
+
   return (
     <section className="max-w-7xl mx-auto px-6 py-4 mt-4">
       <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-col gap-4">
@@ -80,9 +101,60 @@ export default function Filters({
           </div>
         </div>
 
+        {/* ======================================================== */}
+        {/* SUB-FILTROS INTELIGENTES */}
+        {/* ======================================================== */}
+        
+        {/* Sub-filtro de Grúas */}
+        {categoryValue === 'Gruas' && (
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 animate-fade-in mt-2">
+            <label className="text-xs font-bold text-orange-700 uppercase mb-2 block">
+              Especifique Tipo y Capacidad de Grúa:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {OPCIONES_GRUAS.map((opt) => (
+                <button
+                  key={opt.val}
+                  onClick={() => onSubCategoryChange(opt.val)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                    subCategoryValue === opt.val
+                      ? 'bg-orange-500 border-orange-600 text-white shadow-md'
+                      : 'bg-white border-orange-200 text-orange-700 hover:bg-orange-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Sub-filtro de Bombas */}
+        {categoryValue === 'Bombas' && (
+          <div className="bg-orange-50 p-4 rounded-lg border border-orange-100 animate-fade-in mt-2">
+            <label className="text-xs font-bold text-orange-700 uppercase mb-2 block">
+              Especifique el Alcance de la Bomba:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {OPCIONES_BOMBAS.map((opt) => (
+                <button
+                  key={opt.val}
+                  onClick={() => onSubCategoryChange(opt.val)}
+                  className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${
+                    subCategoryValue === opt.val
+                      ? 'bg-orange-500 border-orange-600 text-white shadow-md'
+                      : 'bg-white border-orange-200 text-orange-700 hover:bg-orange-100'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* FILA 2: Filtros Técnicos */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-2">
           <div className="flex flex-col">
             <label className="text-xs font-bold text-slate-500 uppercase mb-1">Precio Max ($)</label>
             <input
@@ -166,7 +238,6 @@ export default function Filters({
             )}
           </div>
         </div>
-
       </div>
     </section>
   );

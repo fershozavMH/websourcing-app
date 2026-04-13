@@ -11,7 +11,7 @@ import MachineCard from '@/components/MachineCard';
 
 const MACHINES_PER_PAGE = 50;
 
-// === CONFIGURACIÓN LIMPIA DE CATEGORÍAS (Sincronizada con Firebase) ===
+// === CONFIGURACIÓN LIMPIA DE CATEGORÍAS (Con tus nuevos iconos) ===
 const CATEGORIAS_INICIO = [
   {
     id: 'Excavadoras',
@@ -49,6 +49,11 @@ const CATEGORIAS_INICIO = [
     icon: <img src="/iconos/pipa.png" alt="Camiones Pipa" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
   },
   {
+    id: 'Bombas',
+    nombre: 'Bombas de Concreto',
+    icon: <img src="/iconos/concrete-pump.png" alt="Bombas de Concreto" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
+  },
+  {
     id: 'Tractocamiones',
     nombre: 'Tractocamiones',
     icon: <img src="/iconos/tractocamion.webp" alt="Tractocamiones" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
@@ -57,27 +62,22 @@ const CATEGORIAS_INICIO = [
     id: 'Gruas',
     nombre: 'Grúas',
     icon: <img src="/iconos/grua.webp" alt="Grúas" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-    
   },
   {
     id: 'Elevadores',
     nombre: 'Elevadores',
     icon: <img src="/iconos/elevador.webp" alt="Elevadores" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-    
   },
   {
     id: 'Rough Terrain',
     nombre: 'Rough Terrain',
     icon: <img src="/iconos/rough-terrain.webp" alt="Rough Terrain" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-    
   },
   {
     id: 'All Terrain',
     nombre: 'All Terrain',
     icon: <img src="/iconos/all-terrain.webp" alt="All Terrain" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-    
   },
-  
   {
     id: 'ALL',
     nombre: 'Ver Todo',
@@ -107,6 +107,8 @@ export default function Home() {
 
   const [searchValue, setSearchValue] = useState('');
   const [categoryValue, setCategoryValue] = useState('ALL');
+  // --- ESTADO PARA EL SUB-FILTRO ---
+  const [subCategoryValue, setSubCategoryValue] = useState('ALL'); 
   const [priceValue, setPriceValue] = useState('');
   const [minYearValue, setMinYearValue] = useState('');
   const [maxYearValue, setMaxYearValue] = useState('');
@@ -137,7 +139,6 @@ export default function Home() {
       const colRef = collection(db, 'maquinaria_aprobada');
       let q;
       
-      // Ahora es una consulta hermosa y sencilla
       if (categoryToFetch === 'ALL') {
         q = query(colRef, orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE));
       } else {
@@ -170,12 +171,14 @@ export default function Home() {
 
   const handleSelectCategory = (catId: string) => {
     setCategoryValue(catId);
+    setSubCategoryValue('ALL'); // Reseteamos el sub-filtro al cambiar de categoría
     setActiveView('catalog');
     fetchInitialData(catId);
   };
 
   const goHome = () => {
     setActiveView('home');
+    setSubCategoryValue('ALL'); // Reseteamos el sub-filtro al volver al inicio
     setMachines([]);
   };
 
@@ -214,7 +217,7 @@ export default function Home() {
     }
   };
 
-  // Creador Dinámico de Categorías para el Dropdown
+  // Creador Dinámico de Categorías para el Dropdown principal
   const dropdownCategories = useMemo(() => {
     const baseCats = CATEGORIAS_INICIO.filter(c => c.id !== 'ALL').map(c => c.id);
     const loadedCats = machines.map(m => m.categoria_tarea).filter(Boolean);
@@ -222,7 +225,7 @@ export default function Home() {
     return uniqueCats.sort();
   }, [machines]);
 
-  // Filtro en memoria (también súper simplificado)
+  // Motor de Filtro en Memoria
   const filteredMachines = useMemo(() => {
     const term = searchValue.toLowerCase();
     const maxP = priceValue ? parseFloat(priceValue) : Infinity;
@@ -232,9 +235,10 @@ export default function Home() {
     
     let filtered = machines.filter(machine => {
       const matchesSearch = machine.titulo.toLowerCase().includes(term);
-      
-      // Filtro de categoría directo
       const matchesCategory = categoryValue === 'ALL' || machine.categoria_tarea === categoryValue;
+      
+      // Lógica crucial del sub-filtro para las Grúas (Busca por origen_tarea)
+      const matchesSubCategory = subCategoryValue === 'ALL' || machine.origen_tarea === subCategoryValue;
       
       const matchesPrice = machine.precio <= maxP;
       const matchesYear = machine.año >= minY && machine.año <= maxY;
@@ -248,7 +252,7 @@ export default function Home() {
         }
       }
 
-      return matchesSearch && matchesCategory && matchesPrice && matchesYear && matchesHours;
+      return matchesSearch && matchesCategory && matchesSubCategory && matchesPrice && matchesYear && matchesHours;
     });
 
     switch (sortValue) {
@@ -258,7 +262,7 @@ export default function Home() {
     }
 
     return filtered;
-  }, [machines, searchValue, categoryValue, priceValue, minYearValue, maxYearValue, maxHoursValue, sortValue]);
+  }, [machines, searchValue, categoryValue, subCategoryValue, priceValue, minYearValue, maxYearValue, maxHoursValue, sortValue]);
 
   if (authChecking) {
     return (
@@ -302,7 +306,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
               Inventario de Equipos 
             </h2>
-            <p className="text-slate-500">Selecciona una categoría para explorar el mercado</p>
+            <p className="text-slate-500">Selecciona una categoría para explorar el mercado en tiempo real</p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-16 gap-x-8">
@@ -332,6 +336,7 @@ export default function Home() {
             onSearchChange={setSearchValue}
             onCategoryChange={(val) => {
               setCategoryValue(val);
+              setSubCategoryValue('ALL'); 
               fetchInitialData(val); 
             }}
             onPriceChange={setPriceValue}
@@ -342,6 +347,8 @@ export default function Home() {
             onRefresh={() => fetchInitialData(categoryValue)}
             searchValue={searchValue}
             categoryValue={categoryValue}
+            subCategoryValue={subCategoryValue}
+            onSubCategoryChange={setSubCategoryValue}
             priceValue={priceValue}
             minYearValue={minYearValue}
             maxYearValue={maxYearValue}
@@ -355,12 +362,12 @@ export default function Home() {
             {loading ? (
               <div className="text-center py-20">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
-                <p className="text-slate-500 mt-4 font-medium">Conectando con Base de Datos...</p>
+                <p className="text-slate-500 mt-4 font-medium">Extrayendo datos...</p>
               </div>
             ) : filteredMachines.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-xl border border-slate-200 mt-4 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-700">No hay coincidencias</h3>
-                <p className="text-slate-500 mt-2">Intenta limpiar los filtros o haz clic en "Cargar más inventario antiguo".</p>
+                <h3 className="text-xl font-bold text-slate-700">No hay equipos disponibles</h3>
+                <p className="text-slate-500 mt-2">Ajusta los filtros o intenta cargar el inventario histórico.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
