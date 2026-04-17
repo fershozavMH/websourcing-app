@@ -1,19 +1,33 @@
+// Opciones de ordenamiento para tu catálogo
+export type SortOption = 'recent' | 'price_asc' | 'price_desc' | 'year_desc';
+
+// El contrato oficial de lo que es una "Máquina" en toda tu aplicación
 export interface Machine {
   id: string;
   titulo: string;
+  categoria_tarea: string;
+  origen_tarea: string;
+  pagina: string;
+  url: string;
+  imagenes: string[];
   precio: number;
   año: number;
-  uso?: number;
+  uso: number; // Horas o Millas generales
+  ubicacion: string;
+  telefono_vendedor: string;
+  
+  // Propiedades opcionales (las traen las Bombas de Concreto)
   uso_bomba?: number;
   uso_motor?: number;
-  ubicacion: string;
-  categoria_tarea: string;
-  origen_tarea?: string;
-  imagenes: string[];
-  url: string;
-  telefono_vendedor: string;
-  pagina?: string;
-  timestamp?: { seconds: number; nanoseconds: number } | Date;
-}
 
-export type SortOption = 'recent' | 'price_asc' | 'price_desc' | 'year_desc';
+  // --- NUEVOS CAMPOS TÉCNICOS (Opcionales con "?" porque FB no los tiene) ---
+  motor?: string;
+  transmision?: string;
+  capacidad?: string;
+  marca_pluma?: string;
+  marca_camion?: string;
+
+  // Otros campos que podrías usar en el futuro
+  es_subasta?: boolean;
+  timestamp?: any; 
+}

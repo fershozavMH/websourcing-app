@@ -11,82 +11,23 @@ import MachineCard from '@/components/MachineCard';
 
 const MACHINES_PER_PAGE = 50;
 
-// === CONFIGURACIÓN LIMPIA DE CATEGORÍAS (Con tus nuevos iconos) ===
 const CATEGORIAS_INICIO = [
-  {
-    id: 'Excavadoras',
-    nombre: 'Excavadoras',
-    icon: <img src="/iconos/exc.webp" alt="Excavadoras" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Retroexcavadoras',
-    nombre: 'Retroexcavadoras',
-    icon: <img src="/iconos/retro.webp" alt="Retroexcavadoras" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Topadores',
-    nombre: 'Topadores',
-    icon: <img src="/iconos/topador.webp" alt="Topadores" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Motoconformadoras',
-    nombre: 'Motoconformadoras',
-    icon: <img src="/iconos/motoconformadora.webp" alt="Motoconformadoras" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />  
-  },
-  {
-    id: 'Camiones Volteo',
-    nombre: 'Camiones Volteo',
-    icon: <img src="/iconos/camion-volteo.webp" alt="Camiones Volteo" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />  
-  },
-  {
-    id: 'Camiones Trompo',
-    nombre: 'Camiones Trompo',
-    icon: <img src="/iconos/trompo.png" alt="Camiones Trompo" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Camiones Pipa',
-    nombre: 'Camiones Pipa',
-    icon: <img src="/iconos/pipa.png" alt="Camiones Pipa" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Bombas',
-    nombre: 'Bombas de Concreto',
-    icon: <img src="/iconos/concrete-pump.png" alt="Bombas de Concreto" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Tractocamiones',
-    nombre: 'Tractocamiones',
-    icon: <img src="/iconos/tractocamion.webp" alt="Tractocamiones" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Gruas',
-    nombre: 'Grúas',
-    icon: <img src="/iconos/grua.webp" alt="Grúas" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Elevadores',
-    nombre: 'Elevadores',
-    icon: <img src="/iconos/elevador.webp" alt="Elevadores" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'Rough Terrain',
-    nombre: 'Rough Terrain',
-    icon: <img src="/iconos/rough-terrain.webp" alt="Rough Terrain" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'All Terrain',
-    nombre: 'All Terrain',
-    icon: <img src="/iconos/all-terrain.webp" alt="All Terrain" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" />
-  },
-  {
-    id: 'ALL',
-    nombre: 'Ver Todo',
-    icon: (
-      <svg className="w-16 h-16 text-slate-700 transition-all duration-300 group-hover:scale-110 group-hover:text-orange-500 mb-6" viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 12h16v16H12zM36 12h16v16H36zM12 36h16v16H12zM36 36h16v16H36z"/>
-      </svg>
-    )
-  }
+  { id: 'Excavadoras', nombre: 'Excavadoras', icon: <img src="/iconos/exc.webp" alt="Exc" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Retroexcavadoras', nombre: 'Retroexcavadoras', icon: <img src="/iconos/retro.webp" alt="Retro" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Topadores', nombre: 'Topadores', icon: <img src="/iconos/topador.webp" alt="Topador" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Cargadores', nombre: 'Cargadores', icon: <img src="/iconos/topador.webp" alt="Cargador" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Motoconformadoras', nombre: 'Motoconformadoras', icon: <img src="/iconos/motoconformadora.webp" alt="Moto" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Camiones Volteo', nombre: 'Camiones Volteo', icon: <img src="/iconos/camion-volteo.webp" alt="Volteo" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Camiones Trompo', nombre: 'Camiones Trompo', icon: <img src="/iconos/trompo.png" alt="Trompo" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Camiones Pipa', nombre: 'Camiones Pipa', icon: <img src="/iconos/pipa.png" alt="Pipa" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Tractocamiones', nombre: 'Tractocamiones', icon: <img src="/iconos/tractocamion.webp" alt="Tracto" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Gruas Titanes', nombre: 'Grúas Titanes', icon: <img src="/iconos/grua.webp" alt="Titan" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Gruas Articuladas', nombre: 'Grúas Articuladas', icon: <img src="/iconos/grua.webp" alt="Articulada" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Bombas', nombre: 'Bombas', icon: <img src="/iconos/Icon_1019.webp" alt="Bomba" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Elevadores', nombre: 'Elevadores', icon: <img src="/iconos/elevador.webp" alt="Elevador" className="w-32 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'Rough Terrain', nombre: 'Rough Terrain', icon: <img src="/iconos/rough-terrain.webp" alt="RT" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'All Terrain', nombre: 'All Terrain', icon: <img src="/iconos/all-terrain.webp" alt="AT" className="w-42 h-auto object-contain transition-transform duration-300 group-hover:scale-110 drop-shadow-sm" /> },
+  { id: 'ALL', nombre: 'Ver Todo', icon: <svg className="w-16 h-16 text-slate-700 transition-all duration-300 group-hover:scale-110 group-hover:text-orange-500 mb-6" viewBox="0 0 64 64" fill="currentColor"><path d="M12 12h16v16H12zM36 12h16v16H36zM12 36h16v16H12zM36 36h16v16H36z"/></svg> }
 ];
 
 export default function Home() {
@@ -95,305 +36,308 @@ export default function Home() {
   const [authChecking, setAuthChecking] = useState(true);
 
   const [activeView, setActiveView] = useState<'home' | 'catalog'>('home');
-
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
+  // --- FILTROS GLOBALES (BLANCOS) ---
+  const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>('AGENCIAS');
   const [searchValue, setSearchValue] = useState('');
   const [categoryValue, setCategoryValue] = useState('ALL');
-  // --- ESTADO PARA EL SUB-FILTRO ---
-  const [subCategoryValue, setSubCategoryValue] = useState('ALL'); 
-  const [priceValue, setPriceValue] = useState('');
+  const [minPriceValue, setMinPriceValue] = useState('');
+  const [maxPriceValue, setMaxPriceValue] = useState('');
   const [minYearValue, setMinYearValue] = useState('');
   const [maxYearValue, setMaxYearValue] = useState('');
-  const [maxHoursValue, setMaxHoursValue] = useState('');
+  const [hoursMaxValue, setHoursMaxValue] = useState('');
+  const [milesMaxValue, setMilesMaxValue] = useState('');
+  const [engineValue, setEngineValue] = useState('');
+  const [transmissionValue, setTransmissionValue] = useState('');
   const [sortValue, setSortValue] = useState<SortOption>('recent');
 
+  // --- FILTROS RÁPIDOS SUPERIORES (NARANJAS) ---
+  const [capacityValue, setCapacityValue] = useState('');
+  const [boomBrandValue, setBoomBrandValue] = useState('');
+  const [truckBrandValue, setTruckBrandValue] = useState('');
+
+  // Identificadores de Categoría
+  const isTitan = categoryValue === 'Gruas Titanes';
+  const isArticulada = categoryValue === 'Gruas Articuladas';
+
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) setIsAuthenticated(true);
-      else router.push('/login');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) setIsAuthenticated(true); else router.push('/login');
       setAuthChecking(false);
     });
-    return () => unsubscribeAuth();
+    return () => unsubscribe();
   }, [router]);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
+  const handleLogout = async () => { await signOut(auth); router.push('/login'); };
 
-  // ==========================================
-  // CONSULTA LIMPIA Y DIRECTA A FIREBASE
-  // ==========================================
   const fetchInitialData = useCallback(async (categoryToFetch: string) => {
-    setLoading(true);
-    setMachines([]);
+    setLoading(true); setMachines([]);
     try {
       const colRef = collection(db, 'maquinaria_aprobada');
-      let q;
-      
-      if (categoryToFetch === 'ALL') {
-        q = query(colRef, orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE));
-      } else {
-        q = query(colRef, where('categoria_tarea', '==', categoryToFetch), orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE));
-      }
+      let q = categoryToFetch === 'ALL' 
+        ? query(colRef, orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE))
+        : query(colRef, where('categoria_tarea', '==', categoryToFetch), orderBy('timestamp', 'desc'), limit(MACHINES_PER_PAGE));
       
       const snapshot = await getDocs(q); 
-      
-      const newMachines: Machine[] = [];
-      snapshot.forEach((doc) => {
-        newMachines.push({ id: doc.id, ...(doc.data() as DocumentData) } as Machine);
-      });
-      
+      const newMachines = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Machine));
       setMachines(newMachines);
       setLastUpdate(new Date());
-      
-      if (snapshot.docs.length > 0) {
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === MACHINES_PER_PAGE);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Error al cargar datos:", error);
-    } finally {
-      setLoading(false);
-      setIsRefreshing(false);
-    }
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMore(snapshot.docs.length === MACHINES_PER_PAGE);
+    } catch (e) { console.error(e); } finally { setLoading(false); }
   }, []);
 
   const handleSelectCategory = (catId: string) => {
     setCategoryValue(catId);
-    setSubCategoryValue('ALL'); // Reseteamos el sub-filtro al cambiar de categoría
-    setActiveView('catalog');
-    fetchInitialData(catId);
+    // Limpiamos los filtros naranjas al cambiar de categoría
+    setCapacityValue(''); setBoomBrandValue(''); setTruckBrandValue('');
+    setActiveView('catalog'); fetchInitialData(catId);
   };
 
-  const goHome = () => {
-    setActiveView('home');
-    setSubCategoryValue('ALL'); // Reseteamos el sub-filtro al volver al inicio
-    setMachines([]);
-  };
+  const goHome = () => { setActiveView('home'); setMachines([]); };
 
   const loadMoreData = async () => {
     if (!lastDoc) return;
     setLoadingMore(true);
     try {
       const colRef = collection(db, 'maquinaria_aprobada');
-      let q;
-      
-      if (categoryValue === 'ALL') {
-        q = query(colRef, orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(MACHINES_PER_PAGE));
-      } else {
-        q = query(colRef, where('categoria_tarea', '==', categoryValue), orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(MACHINES_PER_PAGE));
-      }
-      
-      const snapshot = await getDocs(q); 
-      
-      const newMachines: Machine[] = [];
-      snapshot.forEach((doc) => {
-        newMachines.push({ id: doc.id, ...(doc.data() as DocumentData) } as Machine);
-      });
-      
-      setMachines((prev) => [...prev, ...newMachines]); 
-      
-      if (snapshot.docs.length > 0) {
-        setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
-        setHasMore(snapshot.docs.length === MACHINES_PER_PAGE);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Error al cargar más datos:", error);
-    } finally {
-      setLoadingMore(false);
-    }
+      let q = categoryValue === 'ALL'
+        ? query(colRef, orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(MACHINES_PER_PAGE))
+        : query(colRef, where('categoria_tarea', '==', categoryValue), orderBy('timestamp', 'desc'), startAfter(lastDoc), limit(MACHINES_PER_PAGE));
+      const snapshot = await getDocs(q);
+      const newMachines = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Machine));
+      setMachines(prev => [...prev, ...newMachines]);
+      setLastDoc(snapshot.docs[snapshot.docs.length - 1] || null);
+      setHasMore(snapshot.docs.length === MACHINES_PER_PAGE);
+    } catch (e) { console.error(e); } finally { setLoadingMore(false); }
   };
 
-  // Creador Dinámico de Categorías para el Dropdown principal
   const dropdownCategories = useMemo(() => {
     const baseCats = CATEGORIAS_INICIO.filter(c => c.id !== 'ALL').map(c => c.id);
     const loadedCats = machines.map(m => m.categoria_tarea).filter(Boolean);
-    const uniqueCats = [...new Set([...baseCats, ...loadedCats])];
-    return uniqueCats.sort();
+    return [...new Set([...baseCats, ...loadedCats])].sort();
   }, [machines]);
 
-  // Motor de Filtro en Memoria
   const filteredMachines = useMemo(() => {
     const term = searchValue.toLowerCase();
-    const maxP = priceValue ? parseFloat(priceValue) : Infinity;
+    const minP = minPriceValue ? parseFloat(minPriceValue) : 0;
+    const maxP = maxPriceValue ? parseFloat(maxPriceValue) : Infinity;
     const minY = minYearValue ? parseInt(minYearValue) : 0;
     const maxY = maxYearValue ? parseInt(maxYearValue) : 9999;
-    const maxH = maxHoursValue ? parseInt(maxHoursValue) : Infinity;
+    const maxHrs = hoursMaxValue ? parseInt(hoursMaxValue) : Infinity;
+    const maxMls = milesMaxValue ? parseInt(milesMaxValue) : Infinity;
+    const engineTerm = engineValue.toLowerCase();
+    const transTerm = transmissionValue.toLowerCase();
     
-    let filtered = machines.filter(machine => {
-      const matchesSearch = machine.titulo.toLowerCase().includes(term);
-      const matchesCategory = categoryValue === 'ALL' || machine.categoria_tarea === categoryValue;
+    return machines.filter(m => {
+      const fullText = `${m.titulo} ${m.origen_tarea} ${m.ubicacion}`.toLowerCase();
       
-      // Lógica crucial del sub-filtro para las Grúas (Busca por origen_tarea)
-      const matchesSubCategory = subCategoryValue === 'ALL' || machine.origen_tarea === subCategoryValue;
+      // Filtros Base Blancos
+      if (term && !fullText.includes(term)) return false;
+      if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue) return false;
+      if (dataSource === 'FACEBOOK' && m.pagina !== 'Facebook Marketplace') return false;
+      if (dataSource === 'AGENCIAS' && m.pagina === 'Facebook Marketplace') return false;
+      if (m.precio < minP || m.precio > maxP) return false;
+      if (m.año < minY || m.año > maxY) return false;
+
+      const isTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones', 'Gruas Titanes'].includes(m.categoria_tarea);
+      const usoValor = ('uso_bomba' in m && 'uso_motor' in m) ? (m.uso_bomba || 0) : (m.uso || 0);
       
-      const matchesPrice = machine.precio <= maxP;
-      const matchesYear = machine.año >= minY && machine.año <= maxY;
-      
-      let matchesHours = true;
-      if (maxH !== Infinity) {
-        if ('uso_bomba' in machine && 'uso_motor' in machine) {
-           matchesHours = (machine.uso_bomba || 0) <= maxH || (machine.uso_motor || 0) <= maxH;
-        } else {
-           matchesHours = (machine.uso || 0) <= maxH;
-        }
+      if (isTruck) {
+         if (usoValor > maxMls) return false;
+      } else {
+         if (usoValor > maxHrs) return false;
       }
 
-      return matchesSearch && matchesCategory && matchesSubCategory && matchesPrice && matchesYear && matchesHours;
+      if (engineTerm && !fullText.includes(engineTerm)) return false;
+      if (transTerm && !fullText.includes(transTerm)) return false;
+
+      // Filtros Naranjas (Grúas)
+      if (capacityValue) {
+        const [capMin] = capacityValue.replace('+', '').split('-');
+        if (capMin && !fullText.includes(capMin)) return false;
+      }
+      if (boomBrandValue && !fullText.includes(boomBrandValue.toLowerCase())) return false;
+      if (truckBrandValue && !fullText.includes(truckBrandValue.toLowerCase())) return false;
+
+      return true;
+    }).sort((a, b) => {
+      if (sortValue === 'price_asc') return a.precio - b.precio;
+      if (sortValue === 'price_desc') return b.precio - a.precio;
+      if (sortValue === 'year_desc') return b.año - a.año;
+      return 0; 
     });
+  }, [machines, searchValue, categoryValue, minPriceValue, maxPriceValue, minYearValue, maxYearValue, hoursMaxValue, milesMaxValue, engineValue, transmissionValue, capacityValue, boomBrandValue, truckBrandValue, sortValue, dataSource]);
 
-    switch (sortValue) {
-      case 'price_asc': filtered.sort((a, b) => a.precio - b.precio); break;
-      case 'price_desc': filtered.sort((a, b) => b.precio - a.precio); break;
-      case 'year_desc': filtered.sort((a, b) => b.año - a.año); break;
-    }
-
-    return filtered;
-  }, [machines, searchValue, categoryValue, subCategoryValue, priceValue, minYearValue, maxYearValue, maxHoursValue, sortValue]);
-
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-slate-900 flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-      </div>
-    );
-  }
-
+  if (authChecking) return <div className="min-h-screen bg-slate-900 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div></div>;
   if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
-      
       <nav className="bg-slate-900 text-white p-6 shadow-md border-b-4 border-orange-500 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div>
-            <button onClick={goHome} className="text-3xl font-black tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity text-left">
-              WebSourcing <span className="text-orange-500">Live</span>
-            </button>
-            <p className="text-slate-400 text-sm mt-1">Inteligencia de Adquisición para Machinery Hunters</p>
-          </div>
-          <div className="flex items-center gap-4">
-            {activeView === 'catalog' && (
-              <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-3">
-                <span className="text-slate-300 font-medium hidden md:inline">Mostrando:</span> 
-                <span className="text-orange-400 font-bold text-2xl">{filteredMachines.length}</span>
-              </div>
-            )}
-            <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-red-500 border border-slate-700 hover:border-red-600 px-3 py-2 rounded transition-colors">
-              Salir
-            </button>
-          </div>
+        <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <button onClick={goHome} className="text-3xl font-black tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity">
+            WebSourcing <span className="text-orange-500">Live</span>
+          </button>
+          {activeView === 'catalog' && (
+            <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-3">
+              <span className="text-slate-300 font-medium hidden md:inline">Resultados:</span> 
+              <span className="text-orange-400 font-bold text-2xl">{filteredMachines.length}</span>
+            </div>
+          )}
+          <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-red-500 px-3 py-2 rounded border border-slate-700 transition-colors">Salir</button>
         </div>
       </nav>
 
-      {/* ================= VISTA 1: INICIO ================= */}
-      {activeView === 'home' && (
+      {activeView === 'home' ? (
         <main className="max-w-6xl mx-auto px-6 mt-12 mb-20 animate-fade-in">
           <div className="text-center mb-16 border-b border-slate-200 pb-6">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">
-              Inventario de Equipos 
-            </h2>
-            <p className="text-slate-500">Selecciona una categoría para explorar el mercado en tiempo real</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Inventario de Equipos</h2>
+            <p className="text-slate-500">Selecciona una categoría para explorar el mercado global</p>
           </div>
-          
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-16 gap-x-8">
             {CATEGORIAS_INICIO.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => handleSelectCategory(cat.id)}
-                className="flex flex-col items-center justify-center text-center group cursor-pointer"
-              >
-                <div className="h-36 flex items-center justify-center w-full">
-                  {cat.icon}
-                </div>
-                <span className="mt-2 text-sm md:text-base font-bold text-slate-700 group-hover:text-orange-600 transition-colors">
-                  {cat.nombre}
-                </span>
+              <button key={cat.id} onClick={() => handleSelectCategory(cat.id)} className="flex flex-col items-center justify-center text-center group cursor-pointer">
+                <div className="h-36 flex items-center justify-center w-full">{cat.icon}</div>
+                <span className="mt-2 text-sm md:text-base font-bold text-slate-700 group-hover:text-orange-600 transition-colors">{cat.nombre}</span>
               </button>
             ))}
           </div>
         </main>
-      )}
+      ) : (
+        <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 mt-6">
+          
+          <div className="flex justify-center md:justify-start mb-6">
+            <div className="bg-slate-200 p-1 rounded-xl inline-flex shadow-inner border border-slate-300">
+              <button onClick={() => setDataSource('AGENCIAS')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 ${dataSource === 'AGENCIAS' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
+                Plataforma
+              </button>
+              <button onClick={() => setDataSource('FACEBOOK')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 ${dataSource === 'FACEBOOK' ? 'bg-[#1877F2] text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span> Marketplace
+              </button>
+              <button onClick={() => setDataSource('ALL')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all ${dataSource === 'ALL' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
+                Mezclar Todo
+              </button>
+            </div>
+          </div>
 
-      {/* ================= VISTA 2: CATÁLOGO ================= */}
-      {activeView === 'catalog' && (
-        <>
-          <Filters
-            categories={dropdownCategories} 
-            onSearchChange={setSearchValue}
-            onCategoryChange={(val) => {
-              setCategoryValue(val);
-              setSubCategoryValue('ALL'); 
-              fetchInitialData(val); 
-            }}
-            onPriceChange={setPriceValue}
-            onMinYearChange={setMinYearValue}
-            onMaxYearChange={setMaxYearValue}
-            onMaxHoursChange={setMaxHoursValue}
-            onSortChange={setSortValue}
-            onRefresh={() => fetchInitialData(categoryValue)}
-            searchValue={searchValue}
-            categoryValue={categoryValue}
-            subCategoryValue={subCategoryValue}
-            onSubCategoryChange={setSubCategoryValue}
-            priceValue={priceValue}
-            minYearValue={minYearValue}
-            maxYearValue={maxYearValue}
-            maxHoursValue={maxHoursValue}
-            sortValue={sortValue}
-            isRefreshing={isRefreshing}
-            lastUpdate={lastUpdate}
-          />
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            
+            {/* COMPONENTE DE FILTROS BLANCOS (SIDEBAR) */}
+            <div className="w-full md:w-64 lg:w-72 shrink-0">
+              <Filters
+                categories={dropdownCategories} 
+                searchValue={searchValue} onSearchChange={setSearchValue}
+                categoryValue={categoryValue} onCategoryChange={(val) => { setCategoryValue(val); fetchInitialData(val); }}
+                
+                minPriceValue={minPriceValue} onMinPriceChange={setMinPriceValue}
+                maxPriceValue={maxPriceValue} onMaxPriceChange={setMaxPriceValue}
+                
+                minYearValue={minYearValue} onMinYearChange={setMinYearValue}
+                maxYearValue={maxYearValue} onMaxYearChange={setMaxYearValue}
+                
+                hoursMaxValue={hoursMaxValue} onHoursMaxChange={setHoursMaxValue}
+                milesMaxValue={milesMaxValue} onMilesMaxChange={setMilesMaxValue}
+                
+                engineValue={engineValue} onEngineChange={setEngineValue}
+                transmissionValue={transmissionValue} onTransmissionChange={setTransmissionValue}
+                
+                sortValue={sortValue} onSortChange={setSortValue}
+                
+                onRefresh={() => fetchInitialData(categoryValue)}
+                isRefreshing={loading} lastUpdate={lastUpdate}
+              />
+            </div>
 
-          <main className="max-w-7xl mx-auto px-6 mt-2">
-            {loading ? (
-              <div className="text-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
-                <p className="text-slate-500 mt-4 font-medium">Extrayendo datos...</p>
-              </div>
-            ) : filteredMachines.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-xl border border-slate-200 mt-4 shadow-sm">
-                <h3 className="text-xl font-bold text-slate-700">No hay equipos disponibles</h3>
-                <p className="text-slate-500 mt-2">Ajusta los filtros o intenta cargar el inventario histórico.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                {filteredMachines.map((machine) => (
-                  <MachineCard key={machine.id} machine={machine} />
-                ))}
-              </div>
-            )}
+            <main className="flex-1 w-full">
+              
+              {/* BARRA SUPERIOR DE GRÚAS (FILTROS NARANJAS) */}
+              {(isTitan || isArticulada) && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 shadow-sm animate-fade-in flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-orange-800 text-sm uppercase tracking-wider">Filtro Rápido:</span>
+                  </div>
+                  
+                  <select 
+                    value={capacityValue} 
+                    onChange={(e) => setCapacityValue(e.target.value)} 
+                    className="bg-white border border-orange-300 text-orange-800 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium cursor-pointer"
+                  >
+                    <option value="">Cualquier Capacidad</option>
+                    {isTitan && (
+                      <>
+                        <option value="10-16">10 - 16 Tons</option>
+                        <option value="17-20">17 - 20 Tons</option>
+                        <option value="21-26">21 - 26 Tons</option>
+                        <option value="27-35">27 - 35 Tons</option>
+                        <option value="35+">35+ Tons</option>
+                      </>
+                    )}
+                    {isArticulada && (
+                      <>
+                        <option value="5-8">5 - 8 Tons</option>
+                        <option value="9-12">9 - 12 Tons</option>
+                        <option value="13-16">13 - 16 Tons</option>
+                        <option value="17+">17+ Tons</option>
+                      </>
+                    )}
+                  </select>
 
-            {!loading && hasMore && filteredMachines.length > 0 && (
-              <div className="flex justify-center mt-12 mb-8">
-                <button
-                  onClick={loadMoreData}
-                  disabled={loadingMore}
-                  className={`py-3 px-8 rounded-full font-bold shadow-md transition-all flex items-center gap-2 ${
-                    loadingMore 
-                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed' 
-                    : 'bg-slate-800 text-white hover:bg-slate-700 hover:shadow-lg'
-                  }`}
-                >
-                  {loadingMore ? 'Descargando datos históricos...' : '⬇️ Cargar más inventario antiguo'}
-                </button>
-              </div>
-            )}
-          </main>
-        </>
+                  {isTitan && (
+                    <>
+                      <input 
+                        type="text" 
+                        placeholder="Marca de Pluma (Ej. National)" 
+                        value={boomBrandValue} 
+                        onChange={(e) => setBoomBrandValue(e.target.value)} 
+                        className="bg-white border border-orange-300 text-orange-800 placeholder-orange-400 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium w-48" 
+                      />
+                      <input 
+                        type="text" 
+                        placeholder="Marca del Camión (Ej. Peterbilt)" 
+                        value={truckBrandValue} 
+                        onChange={(e) => setTruckBrandValue(e.target.value)} 
+                        className="bg-white border border-orange-300 text-orange-800 placeholder-orange-400 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium w-52" 
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* CONTENIDO DEL CATÁLOGO */}
+              {loading ? (
+                <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
+                  <p className="text-slate-500 mt-4 font-medium italic">Sincronizando con la nube...</p>
+                </div>
+              ) : filteredMachines.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200 shadow-sm">
+                  <h3 className="text-xl font-bold text-slate-700">Sin coincidencias con estos filtros</h3>
+                  <p className="text-slate-500 mt-2">Prueba quitando la marca del motor, limpiando el texto o cambiando de fuente (Agencias/Facebook).</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredMachines.map((machine) => <MachineCard key={machine.id} machine={machine} />)}
+                </div>
+              )}
+
+              {!loading && hasMore && (
+                <div className="flex justify-center mt-12 mb-8">
+                  <button onClick={loadMoreData} disabled={loadingMore} className={`py-4 px-10 rounded-full font-black shadow-lg transition-all ${loadingMore ? 'bg-slate-300 text-slate-500' : 'bg-slate-900 text-white hover:scale-105 hover:bg-orange-600'}`}>
+                    {loadingMore ? 'Cargando más...' : 'Ver Inventario Histórico ↓'}
+                  </button>
+                </div>
+              )}
+            </main>
+
+          </div>
+        </div>
       )}
     </div>
   );
