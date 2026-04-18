@@ -27,6 +27,8 @@ interface FiltersProps {
   onEngineChange: (v: string) => void;
   transmissionValue: string;
   onTransmissionChange: (v: string) => void;
+  locationValue: string;
+  onLocationChange: (v: string) => void;
 
   sortValue: SortOption;
   onSortChange: (v: SortOption) => void;
@@ -37,6 +39,9 @@ interface FiltersProps {
 }
 
 export default function Filters(props: FiltersProps) {
+  // Lógica inteligente para saber qué inputs mostrar
+  const isTruckCategory = props.categoryValue === 'ALL' ? null : ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones', 'Gruas Titanes'].includes(props.categoryValue);
+
   return (
     <aside className="w-full bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-6">
       
@@ -58,7 +63,7 @@ export default function Filters(props: FiltersProps) {
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</label>
-          <select value={props.categoryValue} onChange={(e) => props.onCategoryChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
+          <select value={props.categoryValue} onChange={(e) => props.onCategoryChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none font-medium">
             <option value="ALL">Todas las categorías</option>
             {props.categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
@@ -77,6 +82,7 @@ export default function Filters(props: FiltersProps) {
 
       <hr className="border-slate-100" />
 
+      {/* PRECIO */}
       <div className="space-y-2">
         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Precio (USD)</label>
         <div className="flex gap-2">
@@ -85,6 +91,7 @@ export default function Filters(props: FiltersProps) {
         </div>
       </div>
 
+      {/* AÑO */}
       <div className="space-y-2">
         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Año</label>
         <div className="flex gap-2">
@@ -93,19 +100,32 @@ export default function Filters(props: FiltersProps) {
         </div>
       </div>
 
+      {/* USO (SEPARADO INTELIGENTEMENTE) */}
       <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Horas Máximas</label>
-          <input type="number" placeholder="Ej. 5000" value={props.hoursMaxValue} onChange={(e) => props.onHoursMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Millas Máximas</label>
-          <input type="number" placeholder="Ej. 300000" value={props.milesMaxValue} onChange={(e) => props.onMilesMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-        </div>
+        {(isTruckCategory === false || isTruckCategory === null) && (
+          <div className="space-y-2 animate-fade-in">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Horas Máximas</label>
+            <input type="number" placeholder="Ej. 5000" value={props.hoursMaxValue} onChange={(e) => props.onHoursMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+          </div>
+        )}
+        
+        {(isTruckCategory === true || isTruckCategory === null) && (
+          <div className="space-y-2 animate-fade-in">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Millas Máximas</label>
+            <input type="number" placeholder="Ej. 300000" value={props.milesMaxValue} onChange={(e) => props.onMilesMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+          </div>
+        )}
       </div>
 
       <hr className="border-slate-100" />
 
+      {/* UBICACIÓN UNIVERSAL (NUEVO REQUERIMIENTO) */}
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ubicación (Estado/País)</label>
+        <input type="text" placeholder="Ej. Texas, California..." value={props.locationValue} onChange={(e) => props.onLocationChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+      </div>
+
+      {/* MECÁNICA */}
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Motor</label>

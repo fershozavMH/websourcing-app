@@ -55,6 +55,7 @@ export default function Home() {
   const [milesMaxValue, setMilesMaxValue] = useState('');
   const [engineValue, setEngineValue] = useState('');
   const [transmissionValue, setTransmissionValue] = useState('');
+  const [locationValue, setLocationValue] = useState('');
   const [sortValue, setSortValue] = useState<SortOption>('recent');
 
   // --- FILTROS RÁPIDOS SUPERIORES (NARANJAS) ---
@@ -62,7 +63,7 @@ export default function Home() {
   const [boomBrandValue, setBoomBrandValue] = useState('');
   const [truckBrandValue, setTruckBrandValue] = useState('');
 
-  // Identificadores de Categoría
+  // Identificadores
   const isTitan = categoryValue === 'Gruas Titanes';
   const isArticulada = categoryValue === 'Gruas Articuladas';
 
@@ -95,8 +96,8 @@ export default function Home() {
 
   const handleSelectCategory = (catId: string) => {
     setCategoryValue(catId);
-    // Limpiamos los filtros naranjas al cambiar de categoría
     setCapacityValue(''); setBoomBrandValue(''); setTruckBrandValue('');
+    setHoursMaxValue(''); setMilesMaxValue('');
     setActiveView('catalog'); fetchInitialData(catId);
   };
 
@@ -125,46 +126,80 @@ export default function Home() {
   }, [machines]);
 
   const filteredMachines = useMemo(() => {
-    const term = searchValue.toLowerCase();
+    const term = searchValue.toLowerCase().trim();
     const minP = minPriceValue ? parseFloat(minPriceValue) : 0;
     const maxP = maxPriceValue ? parseFloat(maxPriceValue) : Infinity;
     const minY = minYearValue ? parseInt(minYearValue) : 0;
     const maxY = maxYearValue ? parseInt(maxYearValue) : 9999;
     const maxHrs = hoursMaxValue ? parseInt(hoursMaxValue) : Infinity;
     const maxMls = milesMaxValue ? parseInt(milesMaxValue) : Infinity;
-    const engineTerm = engineValue.toLowerCase();
-    const transTerm = transmissionValue.toLowerCase();
+    
+    const engineTerm = engineValue.toLowerCase().trim();
+    const transTerm = transmissionValue.toLowerCase().trim();
+    const locationTerm = locationValue.toLowerCase().trim();
     
     return machines.filter(m => {
-      const fullText = `${m.titulo} ${m.origen_tarea} ${m.ubicacion}`.toLowerCase();
-      
-      // Filtros Base Blancos
-      if (term && !fullText.includes(term)) return false;
+      // Búsqueda General (Título, Origen, Pluma, Camión)
+      if (term) {
+          const generalText = `${m.titulo} ${m.origen_tarea} ${m.marca_pluma || ''} ${m.marca_camion || ''}`.toLowerCase();
+          if (!generalText.includes(term)) return false;
+      }
+
       if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue) return false;
       if (dataSource === 'FACEBOOK' && m.pagina !== 'Facebook Marketplace') return false;
       if (dataSource === 'AGENCIAS' && m.pagina === 'Facebook Marketplace') return false;
+      
       if (m.precio < minP || m.precio > maxP) return false;
       if (m.año < minY || m.año > maxY) return false;
 
+      // Lógica de Uso
       const isTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones', 'Gruas Titanes'].includes(m.categoria_tarea);
       const usoValor = ('uso_bomba' in m && 'uso_motor' in m) ? (m.uso_bomba || 0) : (m.uso || 0);
       
       if (isTruck) {
-         if (usoValor > maxMls) return false;
+         if (maxMls !== Infinity && usoValor > maxMls) return false;
       } else {
-         if (usoValor > maxHrs) return false;
+         if (maxHrs !== Infinity && usoValor > maxHrs) return false;
       }
 
-      if (engineTerm && !fullText.includes(engineTerm)) return false;
-      if (transTerm && !fullText.includes(transTerm)) return false;
+      // Lógica de Motor y Transmisión (Totalmente Separadas)
+      if (engineTerm) {
+          const mMotor = (m.motor || "").toLowerCase();
+          if (!mMotor.includes(engineTerm) && !m.titulo.toLowerCase().includes(engineTerm)) return false;
+      }
+      
+      if (transTerm) {
+          const mTrans = (m.transmision || "").toLowerCase();
+          // Comparación exacta
+          if (mTrans !== transTerm) return false; 
+      }
+      
+      if (locationTerm) {
+          const mLocation = (m.ubicacion || "").toLowerCase();
+          if (!mLocation.includes(locationTerm)) return false;
+      }
 
-      // Filtros Naranjas (Grúas)
+      // Filtros Naranjas de Grúas
       if (capacityValue) {
-        const [capMin] = capacityValue.replace('+', '').split('-');
-        if (capMin && !fullText.includes(capMin)) return false;
+        const [capMin, capMax] = capacityValue.replace('+', '').split('-');
+        const capText = `${m.capacidad || ''} ${m.origen_tarea} ${m.titulo}`.toLowerCase();
+        
+        if (capMin && capMax) {
+            if (!capText.includes(capMin)) return false; 
+        } else if (capMin) {
+            if (!capText.includes(capMin)) return false;
+        }
       }
-      if (boomBrandValue && !fullText.includes(boomBrandValue.toLowerCase())) return false;
-      if (truckBrandValue && !fullText.includes(truckBrandValue.toLowerCase())) return false;
+      
+      if (boomBrandValue) {
+          const mBoom = (m.marca_pluma || "").toLowerCase();
+          if (!mBoom.includes(boomBrandValue.toLowerCase()) && !m.titulo.toLowerCase().includes(boomBrandValue.toLowerCase())) return false;
+      }
+      
+      if (truckBrandValue) {
+          const mTruck = (m.marca_camion || "").toLowerCase();
+          if (!mTruck.includes(truckBrandValue.toLowerCase()) && !m.titulo.toLowerCase().includes(truckBrandValue.toLowerCase())) return false;
+      }
 
       return true;
     }).sort((a, b) => {
@@ -173,7 +208,7 @@ export default function Home() {
       if (sortValue === 'year_desc') return b.año - a.año;
       return 0; 
     });
-  }, [machines, searchValue, categoryValue, minPriceValue, maxPriceValue, minYearValue, maxYearValue, hoursMaxValue, milesMaxValue, engineValue, transmissionValue, capacityValue, boomBrandValue, truckBrandValue, sortValue, dataSource]);
+  }, [machines, searchValue, categoryValue, minPriceValue, maxPriceValue, minYearValue, maxYearValue, hoursMaxValue, milesMaxValue, engineValue, transmissionValue, locationValue, capacityValue, boomBrandValue, truckBrandValue, sortValue, dataSource]);
 
   if (authChecking) return <div className="min-h-screen bg-slate-900 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div></div>;
   if (!isAuthenticated) return null;
@@ -216,7 +251,7 @@ export default function Home() {
           <div className="flex justify-center md:justify-start mb-6">
             <div className="bg-slate-200 p-1 rounded-xl inline-flex shadow-inner border border-slate-300">
               <button onClick={() => setDataSource('AGENCIAS')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 ${dataSource === 'AGENCIAS' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
-                Plataforma
+               Plataforma
               </button>
               <button onClick={() => setDataSource('FACEBOOK')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 ${dataSource === 'FACEBOOK' ? 'bg-[#1877F2] text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
                 <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span> Marketplace
@@ -229,7 +264,7 @@ export default function Home() {
 
           <div className="flex flex-col md:flex-row gap-6 items-start">
             
-            {/* COMPONENTE DE FILTROS BLANCOS (SIDEBAR) */}
+            {/* SIDEBAR DE FILTROS BLANCOS */}
             <div className="w-full md:w-64 lg:w-72 shrink-0">
               <Filters
                 categories={dropdownCategories} 
@@ -247,6 +282,7 @@ export default function Home() {
                 
                 engineValue={engineValue} onEngineChange={setEngineValue}
                 transmissionValue={transmissionValue} onTransmissionChange={setTransmissionValue}
+                locationValue={locationValue} onLocationChange={setLocationValue}
                 
                 sortValue={sortValue} onSortChange={setSortValue}
                 
@@ -257,7 +293,7 @@ export default function Home() {
 
             <main className="flex-1 w-full">
               
-              {/* BARRA SUPERIOR DE GRÚAS (FILTROS NARANJAS) */}
+              {/* BARRA SUPERIOR DE GRÚAS (NARANJAS) */}
               {(isTitan || isArticulada) && (
                 <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 shadow-sm animate-fade-in flex flex-wrap items-center gap-4">
                   <div className="flex items-center gap-2">
@@ -291,26 +327,13 @@ export default function Home() {
 
                   {isTitan && (
                     <>
-                      <input 
-                        type="text" 
-                        placeholder="Marca de Pluma (Ej. National)" 
-                        value={boomBrandValue} 
-                        onChange={(e) => setBoomBrandValue(e.target.value)} 
-                        className="bg-white border border-orange-300 text-orange-800 placeholder-orange-400 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium w-48" 
-                      />
-                      <input 
-                        type="text" 
-                        placeholder="Marca del Camión (Ej. Peterbilt)" 
-                        value={truckBrandValue} 
-                        onChange={(e) => setTruckBrandValue(e.target.value)} 
-                        className="bg-white border border-orange-300 text-orange-800 placeholder-orange-400 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium w-52" 
-                      />
+                      <input type="text" placeholder="Marca de Pluma (Ej. National)" value={boomBrandValue} onChange={(e) => setBoomBrandValue(e.target.value)} className="bg-white border border-orange-300 text-orange-800 placeholder-orange-400 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium w-48" />
+                      <input type="text" placeholder="Marca del Camión (Ej. Peterbilt)" value={truckBrandValue} onChange={(e) => setTruckBrandValue(e.target.value)} className="bg-white border border-orange-300 text-orange-800 placeholder-orange-400 text-sm rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 outline-none font-medium w-52" />
                     </>
                   )}
                 </div>
               )}
 
-              {/* CONTENIDO DEL CATÁLOGO */}
               {loading ? (
                 <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
