@@ -210,7 +210,7 @@ export default function Filters(props: FiltersProps) {
           <select value={props.transmissionValue} onChange={(e) => props.onTransmissionChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
             <option value="">Cualquiera</option>
             <option value="manual">Manual</option>
-            <option value="auto">Automática / Allison</option>
+            <option value="auto">Automática</option>
           </select>
         </div>
       </div>
