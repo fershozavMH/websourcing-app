@@ -18,21 +18,15 @@ function CatalogApp() {
 
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null); // Guardamos el usuario
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // --- LÓGICA DE PAGINACIÓN CLIENT-SIDE ---
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 24; 
-  const [lastFetchedPage, setLastFetchedPage] = useState(0); // Escudo Anti-Loops
 
-  const { 
-    machines, setMachines, loading, lastUpdate, hasMore, 
-    loadingMore, fetchInitialData, loadMoreData 
-  } = useMachines();
-
+  // Ya no traemos hasMore ni loadMoreData porque ahora tenemos todo en memoria
+  const { machines, setMachines, loading, lastUpdate, fetchInitialData } = useMachines();
   const filters = useMachineFilters(machines);
 
-  // 1. Autenticación y Avatar
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -46,13 +40,11 @@ function CatalogApp() {
     return () => unsubscribe();
   }, [router]);
 
-  // 2. Si cambian los filtros, regresamos a la página 1 y reseteamos el escudo
+  // Si el usuario cambia cualquier filtro, regresamos a la página 1
   useEffect(() => {
     setCurrentPage(1);
-    setLastFetchedPage(0);
   }, [filters.filteredMachines]);
 
-  // 3. Sincronización de URL inicial
   useEffect(() => {
     if (urlCategory) {
       filters.setCategoryValue(urlCategory);
@@ -79,7 +71,7 @@ function CatalogApp() {
     return [...new Set([...baseCats, ...loadedCats])].sort();
   }, [machines]);
 
-  // --- CÁLCULOS MATEMÁTICOS DE PAGINACIÓN ---
+  // --- CÁLCULOS PRECISOS DE PAGINACIÓN ---
   const totalPages = Math.ceil(filters.filteredMachines.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -90,30 +82,18 @@ function CatalogApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // --- 4. MOTOR DE AUTO-RECARGA (El reemplazo del botón "Cargar Más") ---
-  useEffect(() => {
-    // Si estamos en la última página, hay más datos en la nube y no hemos buscado en esta página...
-    if (currentPage === totalPages && hasMore && !loadingMore && filters.filteredMachines.length > 0 && lastFetchedPage !== currentPage) {
-      setLastFetchedPage(currentPage); // Bloqueamos para que solo busque una vez por página
-      loadMoreData(filters.categoryValue); // Auto-busca en segundo plano
-    }
-  }, [currentPage, totalPages, hasMore, loadingMore, filters.filteredMachines.length, filters.categoryValue, lastFetchedPage, loadMoreData]);
-
   if (authChecking) return <div className="min-h-screen bg-slate-900 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div></div>;
   if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans pb-20">
       
-      {/* NAVBAR SUPERIOR CON PERFIL */}
       <nav className="bg-slate-900 text-white p-4 shadow-md border-b-4 border-orange-500 sticky top-0 z-50">
         <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          
           <button onClick={goHome} className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity">
             WebSourcing <span className="text-orange-500">Live</span>
           </button>
           
-          {/* INDICADOR DE RESULTADOS EXACTOS (Ej. 1 - 24 de 100) */}
           {!isHomeView && (
             <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-3">
               <span className="text-slate-300 font-medium hidden md:inline text-sm">Resultados:</span> 
@@ -125,7 +105,6 @@ function CatalogApp() {
             </div>
           )}
           
-          {/* PERFIL DE USUARIO Y SALIR */}
           <div className="flex items-center gap-4 md:gap-6">
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">
@@ -142,7 +121,6 @@ function CatalogApp() {
               Salir
             </button>
           </div>
-
         </div>
       </nav>
 
@@ -195,33 +173,21 @@ function CatalogApp() {
               {loading ? (
                 <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
-                  <p className="text-slate-500 mt-4 font-medium italic">Sincronizando con la nube...</p>
+                  <p className="text-slate-500 mt-4 font-medium italic">Descargando catálogo completo...</p>
                 </div>
               ) : filters.filteredMachines.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-700">Sin coincidencias recientes</h3>
-                  <p className="text-slate-500 mt-2 mb-6">Tus filtros son muy estrictos o no hay máquinas nuevas.</p>
-                  {hasMore && (
-                     <button onClick={() => loadMoreData(filters.categoryValue)} disabled={loadingMore} className="px-6 py-3 bg-slate-800 text-white rounded-lg font-bold hover:bg-slate-700 transition-colors flex items-center gap-2 mx-auto">
-                        {loadingMore ? (
-                          <><svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Buscando en historial...</>
-                        ) : (
-                          <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg> Forzar búsqueda profunda</>
-                        )}
-                     </button>
-                  )}
+                  <h3 className="text-xl font-bold text-slate-700">Sin coincidencias con estos filtros</h3>
+                  <p className="text-slate-500 mt-2 mb-6">Prueba habilitar "Call For Price" o limpiar los filtros de ubicación y año.</p>
                 </div>
               ) : (
                 <>
-                  {/* GRID DE MÁQUINAS PAGINADAS */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 flex-grow content-start">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 grow content-start">
                     {currentItems.map((machine) => <MachineCard key={machine.id} machine={machine} />)}
                   </div>
 
-                  {/* CONTROLES DE PAGINACIÓN INTELIGENTE */}
-                  {(totalPages > 1 || hasMore) && (
+                  {totalPages > 1 && (
                     <div className="mt-10 mb-8 flex justify-center items-center gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-fit mx-auto">
-                      
                       <button 
                         onClick={() => handlePageChange(currentPage - 1)} 
                         disabled={currentPage === 1}
@@ -230,38 +196,25 @@ function CatalogApp() {
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                       </button>
                       
-                      <div className="flex gap-1 overflow-x-auto max-w-[200px] sm:max-w-none no-scrollbar">
+                      <div className="flex gap-1 overflow-x-auto max-w-50 sm:max-w-none no-scrollbar">
                         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                           <button
                             key={page}
                             onClick={() => handlePageChange(page)}
-                            className={`w-10 h-10 rounded-lg font-bold text-sm transition-all flex-shrink-0 ${currentPage === page ? 'bg-orange-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                            className={`w-10 h-10 rounded-lg font-bold text-sm transition-all shrink-0 ${currentPage === page ? 'bg-orange-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
                           >
                             {page}
                           </button>
                         ))}
                       </div>
 
-                      {/* Flecha Siguiente (Actúa como Force Fetch si el Auto-Fetch falló) */}
                       <button 
-                        onClick={() => {
-                          if (currentPage < totalPages) {
-                             handlePageChange(currentPage + 1);
-                          } else if (hasMore) {
-                             loadMoreData(filters.categoryValue);
-                          }
-                        }} 
-                        disabled={currentPage === totalPages && !hasMore}
-                        className={`p-2 rounded-lg font-bold transition-colors ${currentPage === totalPages && !hasMore ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}`}
-                        title={currentPage === totalPages && hasMore ? 'Forzar carga de más registros' : 'Siguiente'}
+                        onClick={() => handlePageChange(currentPage + 1)} 
+                        disabled={currentPage === totalPages}
+                        className={`p-2 rounded-lg font-bold transition-colors ${currentPage === totalPages ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}`}
                       >
-                        {loadingMore ? (
-                          <svg className="w-5 h-5 animate-spin text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                        ) : (
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                        )}
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                       </button>
-
                     </div>
                   )}
                 </>
