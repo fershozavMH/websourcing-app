@@ -3,7 +3,7 @@ import { collection, query, orderBy, where, getDocs, limit } from 'firebase/fire
 import { db } from '@/lib/firebase';
 import type { Machine } from '@/types';
 
-const MAX_FETCH_LIMIT = 1000; // Traemos todo el catálogo de la categoría de golpe
+const MAX_FETCH_LIMIT = 1000; 
 
 export const useMachines = () => {
   const [machines, setMachines] = useState<Machine[]>([]);

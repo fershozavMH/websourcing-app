@@ -1,7 +1,6 @@
 import React from 'react';
 import type { SortOption } from '@/types';
 
-// --- LISTAS DE ESTADOS Y PROVINCIAS ---
 const USA_STATES = [
   { abbr: "AL", name: "Alabama" }, { abbr: "AK", name: "Alaska" }, { abbr: "AZ", name: "Arizona" }, { abbr: "AR", name: "Arkansas" }, { abbr: "CA", name: "California" }, { abbr: "CO", name: "Colorado" }, { abbr: "CT", name: "Connecticut" }, { abbr: "DE", name: "Delaware" }, { abbr: "FL", name: "Florida" }, { abbr: "GA", name: "Georgia" }, { abbr: "HI", name: "Hawaii" }, { abbr: "ID", name: "Idaho" }, { abbr: "IL", name: "Illinois" }, { abbr: "IN", name: "Indiana" }, { abbr: "IA", name: "Iowa" }, { abbr: "KS", name: "Kansas" }, { abbr: "KY", name: "Kentucky" }, { abbr: "LA", name: "Louisiana" }, { abbr: "ME", name: "Maine" }, { abbr: "MD", name: "Maryland" }, { abbr: "MA", name: "Massachusetts" }, { abbr: "MI", name: "Michigan" }, { abbr: "MN", name: "Minnesota" }, { abbr: "MS", name: "Mississippi" }, { abbr: "MO", name: "Missouri" }, { abbr: "MT", name: "Montana" }, { abbr: "NE", name: "Nebraska" }, { abbr: "NV", name: "Nevada" }, { abbr: "NH", name: "New Hampshire" }, { abbr: "NJ", name: "New Jersey" }, { abbr: "NM", name: "New Mexico" }, { abbr: "NY", name: "New York" }, { abbr: "NC", name: "North Carolina" }, { abbr: "ND", name: "North Dakota" }, { abbr: "OH", name: "Ohio" }, { abbr: "OK", name: "Oklahoma" }, { abbr: "OR", name: "Oregon" }, { abbr: "PA", name: "Pennsylvania" }, { abbr: "RI", name: "Rhode Island" }, { abbr: "SC", name: "South Carolina" }, { abbr: "SD", name: "South Dakota" }, { abbr: "TN", name: "Tennessee" }, { abbr: "TX", name: "Texas" }, { abbr: "UT", name: "Utah" }, { abbr: "VT", name: "Vermont" }, { abbr: "VA", name: "Virginia" }, { abbr: "WA", name: "Washington" }, { abbr: "WV", name: "West Virginia" }, { abbr: "WI", name: "Wisconsin" }, { abbr: "WY", name: "Wyoming" }
 ];
@@ -12,61 +11,67 @@ const CAN_PROVINCES = [
 
 interface FiltersProps {
   categories: string[];
-  searchValue: string;
-  onSearchChange: (v: string) => void;
-  categoryValue: string;
-  onCategoryChange: (v: string) => void;
+  searchValue: string; onSearchChange: (v: string) => void;
+  categoryValue: string; onCategoryChange: (v: string) => void;
+  brandValue: string; onBrandChange: (v: string) => void;
   
-  minPriceValue: string;
-  onMinPriceChange: (v: string) => void;
-  maxPriceValue: string;
-  onMaxPriceChange: (v: string) => void;
-  showCallForPrice: boolean;
-  onShowCallForPriceChange: (v: boolean) => void;
+  minPriceValue: string; onMinPriceChange: (v: string) => void;
+  maxPriceValue: string; onMaxPriceChange: (v: string) => void;
+  showCallForPrice: boolean; onShowCallForPriceChange: (v: boolean) => void;
   
-  minYearValue: string;
-  onMinYearChange: (v: string) => void;
-  maxYearValue: string;
-  onMaxYearChange: (v: string) => void;
-  hoursMaxValue: string;
-  onHoursMaxChange: (v: string) => void;
-  milesMaxValue: string;
-  onMilesMaxChange: (v: string) => void;
+  minYearValue: string; onMinYearChange: (v: string) => void;
+  maxYearValue: string; onMaxYearChange: (v: string) => void;
+  hoursMaxValue: string; onHoursMaxChange: (v: string) => void;
+  milesMaxValue: string; onMilesMaxChange: (v: string) => void;
 
-  engineValue: string;
-  onEngineChange: (v: string) => void;
-  transmissionValue: string;
-  onTransmissionChange: (v: string) => void;
+  engineValue: string; onEngineChange: (v: string) => void;
+  transmissionValue: string; onTransmissionChange: (v: string) => void;
   
-  // --- NUEVOS FILTROS DE UBICACIÓN ---
-  countryValue: string;
-  onCountryChange: (v: string) => void;
-  stateValue: string;
-  onStateChange: (v: string) => void;
+  countryValue: string; onCountryChange: (v: string) => void;
+  selectedStates: string[]; onSelectedStatesChange: (v: string[]) => void;
 
-  minCapacityValue: string;
-  onMinCapacityChange: (v: string) => void;
-  maxCapacityValue: string;
-  onMaxCapacityChange: (v: string) => void;
-  boomBrandValue: string;
-  onBoomBrandChange: (v: string) => void;
-  truckBrandValue: string;
-  onTruckBrandChange: (v: string) => void;
-
-  sortValue: SortOption;
-  onSortChange: (v: SortOption) => void;
+  minCapacityValue: string; onMinCapacityChange: (v: string) => void;
+  maxCapacityValue: string; onMaxCapacityChange: (v: string) => void;
+  boomBrandValue: string; onBoomBrandChange: (v: string) => void;
+  truckBrandValue: string; onTruckBrandChange: (v: string) => void;
   
-  onRefresh: () => void;
-  isRefreshing: boolean;
-  lastUpdate: Date | null;
+  craneMountStatus: string; onCraneMountStatusChange: (v: string) => void;
+
+  reqCabin: string; onReqCabinChange: (v: string) => void;
+  reqHammer: string; onReqHammerChange: (v: string) => void;
+  reqExtension: string; onReqExtensionChange: (v: string) => void;
+  req4x4: string; onReq4x4Change: (v: string) => void;
+  reqClam: string; onReqClamChange: (v: string) => void;
+
+  sortValue: SortOption; onSortChange: (v: SortOption) => void;
+  onRefresh: () => void; isRefreshing: boolean; lastUpdate: Date | null;
 }
 
 export default function Filters(props: FiltersProps) {
-  const isTruckCategory = props.categoryValue === 'ALL' ? null : ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones', 'Gruas Titanes'].includes(props.categoryValue);
   const isGrua = props.categoryValue === 'Gruas Titanes' || props.categoryValue === 'Gruas Articuladas';
+  const isRetro = props.categoryValue === 'Retroexcavadoras';
+  
+  const isTitan = props.categoryValue === 'Gruas Titanes';
+  const isArticulada = props.categoryValue === 'Gruas Articuladas';
+  const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(props.categoryValue);
 
-  // Selección dinámica de la lista de estados
+  // LÓGICA INTELIGENTE DE HORAS VS MILLAS
+  const showHours = props.categoryValue === 'ALL' || !isPureTruck; 
+  const showMiles = props.categoryValue === 'ALL' || isPureTruck || isTitan || (isArticulada && props.craneMountStatus !== 'DESMONTADA');
+
   const activeStateList = props.countryValue === 'USA' ? USA_STATES : props.countryValue === 'Canadá' ? CAN_PROVINCES : [];
+
+  const handleAddState = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val && !props.selectedStates.includes(val)) {
+      props.onSelectedStatesChange([...props.selectedStates, val]);
+    }
+    e.target.value = ""; 
+  };
+
+  const removeState = (stateToRemove: string) => {
+    props.onSelectedStatesChange(props.selectedStates.filter(s => s !== stateToRemove));
+  };
 
   return (
     <aside className="w-full bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-6">
@@ -83,7 +88,7 @@ export default function Filters(props: FiltersProps) {
 
       <div className="space-y-2">
         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Palabra Clave</label>
-        <input type="text" placeholder="Ej. CAT 320, Terex..." value={props.searchValue} onChange={(e) => props.onSearchChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+        <input type="text" placeholder="Ej. 320, 580SN..." value={props.searchValue} onChange={(e) => props.onSearchChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
       </div>
 
       <div className="space-y-4">
@@ -94,6 +99,22 @@ export default function Filters(props: FiltersProps) {
             {props.categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </div>
+        
+        {isRetro && (
+          <div className="space-y-2 animate-fade-in">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Marca</label>
+            <select value={props.brandValue} onChange={(e) => props.onBrandChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none text-slate-700">
+              <option value="">Cualquier Marca</option>
+              <option value="CAT">Caterpillar (CAT)</option>
+              <option value="CASE">CASE</option>
+              <option value="JOHN DEERE">John Deere</option>
+              <option value="JCB">JCB</option>
+              <option value="NEW HOLLAND">New Holland</option>
+              <option value="TEREX">Terex</option>
+            </select>
+          </div>
+        )}
+
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ordenar Por</label>
           <select value={props.sortValue} onChange={(e) => props.onSortChange(e.target.value as SortOption)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
@@ -107,6 +128,112 @@ export default function Filters(props: FiltersProps) {
 
       <hr className="border-slate-100" />
 
+      {/* --- MÓDULO UBICACIÓN MULTI-SELECT --- */}
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">País de Ubicación</label>
+          <select 
+            value={props.countryValue} 
+            onChange={(e) => {
+              props.onCountryChange(e.target.value);
+              props.onSelectedStatesChange([]); 
+            }} 
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
+          >
+            <option value="">Cualquier País</option>
+            <option value="USA">Estados Unidos</option>
+            <option value="Canadá">Canadá</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Estados (Múltiple)</label>
+          <select 
+            onChange={handleAddState} 
+            disabled={!props.countryValue}
+            className={`w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none ${!props.countryValue ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:border-orange-400'}`}
+          >
+            <option value="">{props.countryValue ? '+ Añadir Estado/Provincia...' : 'Selecciona un País primero'}</option>
+            {activeStateList.map(s => {
+              const val = `${s.abbr}|${s.name}`;
+              if (props.selectedStates.includes(val)) return null; 
+              return <option key={s.abbr} value={val}>{s.abbr} - {s.name}</option>;
+            })}
+          </select>
+
+          {props.selectedStates.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+              {props.selectedStates.map(state => {
+                const abbr = state.split('|')[0];
+                return (
+                  <span key={state} className="bg-orange-100 text-orange-800 text-[10px] pl-2 pr-1 py-1 rounded-md flex items-center gap-1 font-bold border border-orange-200">
+                    {abbr}
+                    <button onClick={() => removeState(state)} className="hover:bg-orange-200 rounded-full p-0.5 transition-colors text-orange-600">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </span>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <hr className="border-slate-100" />
+
+      {/* --- MÓDULO OPCIONES TÉCNICAS RETROS --- */}
+      {isRetro && (
+        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in">
+           <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+              Especificaciones Adicionales
+           </label>
+           
+           <div className="grid grid-cols-2 gap-3">
+             <div className="space-y-1">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tracción</label>
+               <select value={props.req4x4} onChange={e => props.onReq4x4Change(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                 <option value="ALL">Ambas</option>
+                 <option value="4WD">Solo 4x4</option>
+                 <option value="2WD">Solo 4x2</option>
+               </select>
+             </div>
+             <div className="space-y-1">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cabina</label>
+               <select value={props.reqCabin} onChange={e => props.onReqCabinChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                 <option value="ALL">Ambas</option>
+                 <option value="CERRADA">Cerrada</option>
+                 <option value="ABIERTA">Abierta</option>
+               </select>
+             </div>
+             <div className="space-y-1">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Extensión</label>
+               <select value={props.reqExtension} onChange={e => props.onReqExtensionChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                 <option value="ALL">Cualquiera</option>
+                 <option value="YES">Extendida</option>
+                 <option value="NO">Normal</option>
+               </select>
+             </div>
+             <div className="space-y-1">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Kit Martillo</label>
+               <select value={props.reqHammer} onChange={e => props.onReqHammerChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                 <option value="ALL">Cualquiera</option>
+                 <option value="YES">Con Tubería</option>
+                 <option value="NO">Sin Tubería</option>
+               </select>
+             </div>
+             <div className="space-y-1 col-span-2">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cucharón Frontal</label>
+               <select value={props.reqClam} onChange={e => props.onReqClamChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                 <option value="ALL">Cualquiera</option>
+                 <option value="YES">Bote Almeja (4 en 1)</option>
+                 <option value="NO">Uso General</option>
+               </select>
+             </div>
+           </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Precio (USD)</label>
@@ -115,7 +242,6 @@ export default function Filters(props: FiltersProps) {
             <input type="number" placeholder="Max" value={props.maxPriceValue} onChange={(e) => props.onMaxPriceChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
         </div>
-        
         <label className="flex items-center gap-3 cursor-pointer group bg-slate-50 p-2 rounded-lg border border-slate-200">
           <div className="relative">
             <input type="checkbox" className="sr-only" checked={props.showCallForPrice} onChange={(e) => props.onShowCallForPriceChange(e.target.checked)} />
@@ -128,49 +254,15 @@ export default function Filters(props: FiltersProps) {
         </label>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Capacidad (Toneladas)</label>
-        <div className="flex gap-2">
-          <input type="number" placeholder="Min Tons" value={props.minCapacityValue} onChange={(e) => props.onMinCapacityChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-          <input type="number" placeholder="Max Tons" value={props.maxCapacityValue} onChange={(e) => props.onMaxCapacityChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+      {!isRetro && (
+        <div className="space-y-2 animate-fade-in">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Capacidad (Toneladas)</label>
+          <div className="flex gap-2">
+            <input type="number" placeholder="Min Tons" value={props.minCapacityValue} onChange={(e) => props.onMinCapacityChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Max Tons" value={props.maxCapacityValue} onChange={(e) => props.onMaxCapacityChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+          </div>
         </div>
-      </div>
-
-      <hr className="border-slate-100" />
-
-      {/* --- NUEVA SECCIÓN DE UBICACIÓN --- */}
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">País de Ubicación</label>
-          <select 
-            value={props.countryValue} 
-            onChange={(e) => {
-              props.onCountryChange(e.target.value);
-              props.onStateChange(''); // Resetea el estado si cambian de país
-            }} 
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
-          >
-            <option value="">Cualquier País</option>
-            <option value="USA">Estados Unidos</option>
-            <option value="Canadá">Canadá</option>
-          </select>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Estado / Provincia</label>
-          <select 
-            value={props.stateValue} 
-            onChange={(e) => props.onStateChange(e.target.value)} 
-            disabled={!props.countryValue}
-            className={`w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none ${!props.countryValue ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-          >
-            <option value="">{props.countryValue ? 'Cualquier Estado' : 'Selecciona un País primero'}</option>
-            {activeStateList.map(s => (
-              <option key={s.abbr} value={`${s.abbr}|${s.name}`}>{s.abbr} - {s.name}</option>
-            ))}
-          </select>
-        </div>
-      </div>
+      )}
 
       <hr className="border-slate-100" />
 
@@ -182,15 +274,16 @@ export default function Filters(props: FiltersProps) {
         </div>
       </div>
 
+      {/* --- MÓDULO INTELIGENTE DE HORAS Y MILLAS --- */}
       <div className="space-y-4">
-        {(isTruckCategory === false || isTruckCategory === null) && (
+        {showHours && (
           <div className="space-y-2 animate-fade-in">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Horas Máximas</label>
-            <input type="number" placeholder="Ej. 5000" value={props.hoursMaxValue} onChange={(e) => props.onHoursMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Ej. 8000" value={props.hoursMaxValue} onChange={(e) => props.onHoursMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
         )}
         
-        {(isTruckCategory === true || isTruckCategory === null) && (
+        {showMiles && (
           <div className="space-y-2 animate-fade-in">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Millas Máximas</label>
             <input type="number" placeholder="Ej. 300000" value={props.milesMaxValue} onChange={(e) => props.onMilesMaxChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
@@ -200,20 +293,53 @@ export default function Filters(props: FiltersProps) {
 
       <hr className="border-slate-100" />
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Motor</label>
-          <input type="text" placeholder="Ej. Cummins, CAT..." value={props.engineValue} onChange={(e) => props.onEngineChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+      {!isRetro && (
+        <div className="space-y-4 animate-fade-in">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Motor</label>
+            <input type="text" placeholder="Ej. Cummins, CAT..." value={props.engineValue} onChange={(e) => props.onEngineChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Transmisión</label>
+            <select value={props.transmissionValue} onChange={(e) => props.onTransmissionChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
+              <option value="">Cualquiera</option>
+              <option value="manual">Manual</option>
+              <option value="auto">Automática / Allison</option>
+            </select>
+          </div>
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Transmisión</label>
-          <select value={props.transmissionValue} onChange={(e) => props.onTransmissionChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
-            <option value="">Cualquiera</option>
-            <option value="manual">Manual</option>
-            <option value="auto">Automática</option>
-          </select>
+      )}
+
+      {isGrua && (
+        <div className="space-y-4 bg-orange-50 p-4 rounded-lg border border-orange-200 mt-4 animate-fade-in">
+           <p className="text-xs font-black text-orange-800 uppercase tracking-wider mb-2">Especificaciones de Grúa</p>
+           
+           {/* NUEVO: Selector de Montaje para Articuladas */}
+           {isArticulada && (
+             <div className="space-y-2">
+               <label className="text-[10px] font-bold text-orange-700 uppercase">Tipo de Montaje</label>
+               <select value={props.craneMountStatus} onChange={e => props.onCraneMountStatusChange(e.target.value)} className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500">
+                 <option value="ALL">Cualquiera</option>
+                 <option value="MONTADA">Montada en Camión</option>
+                 <option value="DESMONTADA">Desmontada (Solo Grúa)</option>
+               </select>
+             </div>
+           )}
+
+           <div className="space-y-2">
+             <label className="text-[10px] font-bold text-orange-700 uppercase">Marca de Pluma</label>
+             <input type="text" placeholder="Ej. National, Terex..." value={props.boomBrandValue} onChange={(e) => props.onBoomBrandChange(e.target.value)} className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+           </div>
+           
+           {/* La marca de camión solo aplica para Titanes o Articuladas Montadas */}
+           {(isTitan || props.craneMountStatus !== 'DESMONTADA') && (
+             <div className="space-y-2">
+               <label className="text-[10px] font-bold text-orange-700 uppercase">Marca de Camión</label>
+               <input type="text" placeholder="Ej. Peterbilt, Kenworth..." value={props.truckBrandValue} onChange={(e) => props.onTruckBrandChange(e.target.value)} className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+             </div>
+           )}
         </div>
-      </div>
+      )}
     </aside>
   );
 }

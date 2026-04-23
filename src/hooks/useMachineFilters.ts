@@ -6,6 +6,8 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [searchValue, setSearchValue] = useState('');
   const [categoryValue, setCategoryValue] = useState('ALL');
   
+  const [brandValue, setBrandValue] = useState('');
+  
   const [minPriceValue, setMinPriceValue] = useState('');
   const [maxPriceValue, setMaxPriceValue] = useState('');
   const [showCallForPrice, setShowCallForPrice] = useState(false);
@@ -19,22 +21,34 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [transmissionValue, setTransmissionValue] = useState('');
   
   const [countryValue, setCountryValue] = useState('');
-  const [stateValue, setStateValue] = useState('');
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   
   const [minCapacityValue, setMinCapacityValue] = useState('');
   const [maxCapacityValue, setMaxCapacityValue] = useState('');
   const [boomBrandValue, setBoomBrandValue] = useState('');
   const [truckBrandValue, setTruckBrandValue] = useState('');
   
+  // NUEVO: Estado para Grúas Articuladas
+  const [craneMountStatus, setCraneMountStatus] = useState('ALL');
+  
+  const [reqCabin, setReqCabin] = useState('ALL');
+  const [reqHammer, setReqHammer] = useState('ALL');
+  const [reqExtension, setReqExtension] = useState('ALL');
+  const [req4x4, setReq4x4] = useState('ALL');
+  const [reqClam, setReqClam] = useState('ALL');
+
   const [sortValue, setSortValue] = useState<SortOption>('recent');
 
-  // Función para limpiar filtros al cambiar de categoría principal
   const resetTechnicalFilters = () => {
+    setBrandValue(''); 
     setMinCapacityValue(''); setMaxCapacityValue(''); 
     setBoomBrandValue(''); setTruckBrandValue('');
     setHoursMaxValue(''); setMilesMaxValue('');
     setEngineValue(''); setTransmissionValue('');
-    setCountryValue(''); setStateValue('');
+    setCountryValue(''); setSelectedStates([]);
+    setCraneMountStatus('ALL'); // Reseteamos el montaje
+    setReqCabin('ALL'); setReqHammer('ALL'); setReqExtension('ALL');
+    setReq4x4('ALL'); setReqClam('ALL');
   };
 
   const filteredMachines = useMemo(() => {
@@ -45,7 +59,6 @@ export const useMachineFilters = (machines: Machine[]) => {
     const maxY = maxYearValue ? parseInt(maxYearValue) : 9999;
     const maxHrs = hoursMaxValue ? parseInt(hoursMaxValue) : Infinity;
     const maxMls = milesMaxValue ? parseInt(milesMaxValue) : Infinity;
-    
     const engineTerm = engineValue.toLowerCase().trim();
     const transTerm = transmissionValue.toLowerCase().trim();
     
@@ -59,38 +72,51 @@ export const useMachineFilters = (machines: Machine[]) => {
       if (dataSource === 'FACEBOOK' && m.pagina !== 'Facebook Marketplace') return false;
       if (dataSource === 'AGENCIAS' && m.pagina === 'Facebook Marketplace') return false;
       
+      if (brandValue) {
+          const t = m.titulo.toLowerCase();
+          if (brandValue === 'CAT') {
+              if (!t.includes('cat') && !t.includes('caterpillar')) return false;
+          } else {
+              if (!t.includes(brandValue.toLowerCase())) return false;
+          }
+      }
+
       if (m.precio === 0 || !m.precio) {
           if (!showCallForPrice) return false; 
       } else {
           if (m.precio < minP || m.precio > maxP) return false;
       }
-
       if (m.año < minY || m.año > maxY) return false;
 
-      const isTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones', 'Gruas Titanes'].includes(m.categoria_tarea);
+      // Aplicación de Horas y Millas
       const usoValor = ('uso_bomba' in m && 'uso_motor' in m) ? (m.uso_bomba || 0) : (m.uso || 0);
-      if (isTruck) {
-         if (maxMls !== Infinity && usoValor > maxMls) return false;
-      } else {
-         if (maxHrs !== Infinity && usoValor > maxHrs) return false;
-      }
+      
+      // Siempre evaluamos horas si las pusieron (menos para los camiones puros)
+      if (maxHrs !== Infinity && usoValor > maxHrs) return false;
+      // Siempre evaluamos millas si las pusieron (Aplica para camiones y grúas montadas)
+      if (maxMls !== Infinity && usoValor > maxMls) return false;
 
-      if (engineTerm) {
-          const mMotor = (m.motor || "").toLowerCase();
-          if (!mMotor.includes(engineTerm) && !m.titulo.toLowerCase().includes(engineTerm)) return false;
-      }
-      if (transTerm) {
-          const mTrans = (m.transmision || "").toLowerCase();
-          if (mTrans !== transTerm) return false; 
+      if (categoryValue !== 'Retroexcavadoras') {
+          if (engineTerm) {
+              const mMotor = (m.motor || "").toLowerCase();
+              if (!mMotor.includes(engineTerm) && !m.titulo.toLowerCase().includes(engineTerm)) return false;
+          }
+          if (transTerm) {
+              const mTrans = (m.transmision || "").toLowerCase();
+              if (mTrans !== transTerm) return false; 
+          }
       }
       
-      if (countryValue || stateValue) {
+      if (countryValue || selectedStates.length > 0) {
           const loc = (m.ubicacion || "").toLowerCase();
-          if (stateValue) {
-              const [abbr, fullName] = stateValue.toLowerCase().split('|');
-              const matchAbbr = new RegExp(`\\b${abbr}\\b`).test(loc);
-              const matchName = loc.includes(fullName);
-              if (!matchAbbr && !matchName) return false;
+          if (selectedStates.length > 0) {
+              const matchesAnyState = selectedStates.some(st => {
+                  const [abbr, fullName] = st.toLowerCase().split('|');
+                  const matchAbbr = new RegExp(`\\b${abbr}\\b`).test(loc);
+                  const matchName = loc.includes(fullName);
+                  return matchAbbr || matchName;
+              });
+              if (!matchesAnyState) return false;
           } else if (countryValue) {
               const canadaRegex = /\b(ab|bc|mb|nb|nl|ns|on|pe|qc|sk)\b|alberta|british columbia|manitoba|new brunswick|newfoundland|nova scotia|ontario|prince edward|quebec|saskatchewan|canada/i;
               const isCanada = canadaRegex.test(loc);
@@ -99,13 +125,15 @@ export const useMachineFilters = (machines: Machine[]) => {
           }
       }
 
-      if (minCapacityValue || maxCapacityValue) {
-          const matchCap = (m.capacidad || '').match(/([\d\.]+)/);
-          const valCap = matchCap ? parseFloat(matchCap[1]) : 0;
-          if (!valCap) return false; 
-          const minC = minCapacityValue ? parseFloat(minCapacityValue) : 0;
-          const maxC = maxCapacityValue ? parseFloat(maxCapacityValue) : Infinity;
-          if (valCap < minC || valCap > maxC) return false;
+      if (categoryValue !== 'Retroexcavadoras') {
+          if (minCapacityValue || maxCapacityValue) {
+              const matchCap = (m.capacidad || '').match(/([\d\.]+)/);
+              const valCap = matchCap ? parseFloat(matchCap[1]) : 0;
+              if (!valCap) return false; 
+              const minC = minCapacityValue ? parseFloat(minCapacityValue) : 0;
+              const maxC = maxCapacityValue ? parseFloat(maxCapacityValue) : Infinity;
+              if (valCap < minC || valCap > maxC) return false;
+          }
       }
       
       if (boomBrandValue) {
@@ -117,6 +145,28 @@ export const useMachineFilters = (machines: Machine[]) => {
           if (!mTruck.includes(truckBrandValue.toLowerCase()) && !m.titulo.toLowerCase().includes(truckBrandValue.toLowerCase())) return false;
       }
 
+      // NUEVO: Filtro de Montaje para Grúas Articuladas
+      if (categoryValue === 'Gruas Articuladas') {
+          // Detectamos si está montada leyendo si tiene marca de camión o si el título menciona marcas de camiones
+          const isMounted = !!m.marca_camion || /(freightliner|peterbilt|kenworth|international|ford|sterling|mack|volvo|truck|camion)/i.test((m.titulo + ' ' + (m.origen_tarea || '')).toLowerCase());
+          
+          if (craneMountStatus === 'MONTADA' && !isMounted) return false;
+          if (craneMountStatus === 'DESMONTADA' && isMounted) return false;
+      }
+
+      if (categoryValue === 'Retroexcavadoras') {
+          if (reqCabin === 'CERRADA' && !m.tiene_cabina) return false;
+          if (reqCabin === 'ABIERTA' && m.tiene_cabina) return false;
+          if (req4x4 === '4WD' && !m.es_4x4) return false;
+          if (req4x4 === '2WD' && m.es_4x4) return false;
+          if (reqHammer === 'YES' && !m.tiene_martillo) return false;
+          if (reqHammer === 'NO' && m.tiene_martillo) return false;
+          if (reqExtension === 'YES' && !m.tiene_extension) return false;
+          if (reqExtension === 'NO' && m.tiene_extension) return false;
+          if (reqClam === 'YES' && !m.tiene_almeja) return false;
+          if (reqClam === 'NO' && m.tiene_almeja) return false;
+      }
+
       return true;
     }).sort((a, b) => {
       if (sortValue === 'price_asc') return a.precio - b.precio;
@@ -124,17 +174,16 @@ export const useMachineFilters = (machines: Machine[]) => {
       if (sortValue === 'year_desc') return b.año - a.año;
       return 0; 
     });
-  }, [machines, searchValue, categoryValue, minPriceValue, maxPriceValue, showCallForPrice, minYearValue, maxYearValue, hoursMaxValue, milesMaxValue, engineValue, transmissionValue, countryValue, stateValue, minCapacityValue, maxCapacityValue, boomBrandValue, truckBrandValue, sortValue, dataSource]);
+  }, [machines, searchValue, categoryValue, brandValue, minPriceValue, maxPriceValue, showCallForPrice, minYearValue, maxYearValue, hoursMaxValue, milesMaxValue, engineValue, transmissionValue, countryValue, selectedStates, minCapacityValue, maxCapacityValue, boomBrandValue, truckBrandValue, craneMountStatus, reqCabin, reqHammer, reqExtension, req4x4, reqClam, sortValue, dataSource]);
 
   return {
-    // 1. Estados y funciones necesarios para page.tsx
     dataSource, setDataSource,
     categoryValue, setCategoryValue,
     resetTechnicalFilters,
     filteredMachines,
 
-    // 2. Mapeo exacto para que el truco {...filters} funcione perfecto
     searchValue, onSearchChange: setSearchValue,
+    brandValue, onBrandChange: setBrandValue,
     minPriceValue, onMinPriceChange: setMinPriceValue,
     maxPriceValue, onMaxPriceChange: setMaxPriceValue,
     showCallForPrice, onShowCallForPriceChange: setShowCallForPrice,
@@ -145,11 +194,19 @@ export const useMachineFilters = (machines: Machine[]) => {
     engineValue, onEngineChange: setEngineValue,
     transmissionValue, onTransmissionChange: setTransmissionValue,
     countryValue, onCountryChange: setCountryValue,
-    stateValue, onStateChange: setStateValue,
+    selectedStates, onSelectedStatesChange: setSelectedStates,
     minCapacityValue, onMinCapacityChange: setMinCapacityValue,
     maxCapacityValue, onMaxCapacityChange: setMaxCapacityValue,
     boomBrandValue, onBoomBrandChange: setBoomBrandValue,
     truckBrandValue, onTruckBrandChange: setTruckBrandValue,
-    sortValue, onSortChange: setSortValue,
+    
+    craneMountStatus, onCraneMountStatusChange: setCraneMountStatus, // <-- Exportamos el montaje
+    
+    reqCabin, onReqCabinChange: setReqCabin,
+    reqHammer, onReqHammerChange: setReqHammer,
+    reqExtension, onReqExtensionChange: setReqExtension,
+    req4x4, onReq4x4Change: setReq4x4,
+    reqClam, onReqClamChange: setReqClam,
+    sortValue, onSortChange: setSortValue
   };
 };
