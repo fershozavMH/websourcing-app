@@ -163,6 +163,7 @@ function CatalogApp() {
                 onRefresh={() => fetchInitialData(filters.categoryValue)}
                 isRefreshing={loading} 
                 lastUpdate={lastUpdate}
+                onClearAll={filters.resetAllFilters}
                 onCategoryChange={(val) => { 
                   router.push(`/?cat=${encodeURIComponent(val)}`); 
                 }}

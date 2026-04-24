@@ -37,4 +37,5 @@ export interface Machine {
   tiene_extension?: boolean;
   es_4x4?: boolean;
   tiene_almeja?: boolean;
+
 }

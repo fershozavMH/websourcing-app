@@ -9,11 +9,15 @@ const CAN_PROVINCES = [
   { abbr: "AB", name: "Alberta" }, { abbr: "BC", name: "British Columbia" }, { abbr: "MB", name: "Manitoba" }, { abbr: "NB", name: "New Brunswick" }, { abbr: "NL", name: "Newfoundland and Labrador" }, { abbr: "NS", name: "Nova Scotia" }, { abbr: "ON", name: "Ontario" }, { abbr: "PE", name: "Prince Edward Island" }, { abbr: "QC", name: "Quebec" }, { abbr: "SK", name: "Saskatchewan" }
 ];
 
+const BRANDS_RETROS = ["CAT", "CASE", "JOHN DEERE"];
+
 interface FiltersProps {
   categories: string[];
   searchValue: string; onSearchChange: (v: string) => void;
   categoryValue: string; onCategoryChange: (v: string) => void;
-  brandValue: string; onBrandChange: (v: string) => void;
+  
+  // NUEVO: Interfaz actualizada para arreglo de marcas
+  selectedBrands: string[]; onSelectedBrandsChange: (v: string[]) => void;
   
   minPriceValue: string; onMinPriceChange: (v: string) => void;
   maxPriceValue: string; onMaxPriceChange: (v: string) => void;
@@ -45,6 +49,7 @@ interface FiltersProps {
 
   sortValue: SortOption; onSortChange: (v: SortOption) => void;
   onRefresh: () => void; isRefreshing: boolean; lastUpdate: Date | null;
+  onClearAll: () => void;
 }
 
 export default function Filters(props: FiltersProps) {
@@ -55,12 +60,12 @@ export default function Filters(props: FiltersProps) {
   const isArticulada = props.categoryValue === 'Gruas Articuladas';
   const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(props.categoryValue);
 
-  // LÓGICA INTELIGENTE DE HORAS VS MILLAS
   const showHours = props.categoryValue === 'ALL' || !isPureTruck; 
   const showMiles = props.categoryValue === 'ALL' || isPureTruck || isTitan || (isArticulada && props.craneMountStatus !== 'DESMONTADA');
 
   const activeStateList = props.countryValue === 'USA' ? USA_STATES : props.countryValue === 'Canadá' ? CAN_PROVINCES : [];
 
+  // Handlers para Estados
   const handleAddState = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const val = e.target.value;
     if (val && !props.selectedStates.includes(val)) {
@@ -68,9 +73,20 @@ export default function Filters(props: FiltersProps) {
     }
     e.target.value = ""; 
   };
-
   const removeState = (stateToRemove: string) => {
     props.onSelectedStatesChange(props.selectedStates.filter(s => s !== stateToRemove));
+  };
+
+  // Handlers para Marcas
+  const handleAddBrand = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    if (val && !props.selectedBrands.includes(val)) {
+      props.onSelectedBrandsChange([...props.selectedBrands, val]);
+    }
+    e.target.value = ""; 
+  };
+  const removeBrand = (brandToRemove: string) => {
+    props.onSelectedBrandsChange(props.selectedBrands.filter(b => b !== brandToRemove));
   };
 
   return (
@@ -81,9 +97,14 @@ export default function Filters(props: FiltersProps) {
           <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
           Filtros
         </h3>
-        <button onClick={props.onRefresh} disabled={props.isRefreshing} className="text-slate-400 hover:text-orange-500 transition-colors" title="Refrescar datos">
-           <svg className={`w-5 h-5 ${props.isRefreshing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-        </button>
+        <div className="flex items-center gap-3">
+          <button onClick={props.onClearAll} className="text-[10px] font-bold text-slate-400 hover:text-orange-600 uppercase tracking-wider transition-colors underline decoration-dotted underline-offset-2" title="Limpiar todos los filtros">
+            Limpiar
+          </button>
+          <button onClick={props.onRefresh} disabled={props.isRefreshing} className="text-slate-400 hover:text-orange-500 transition-colors" title="Sincronizar base de datos">
+             <svg className={`w-5 h-5 ${props.isRefreshing ? 'animate-spin text-orange-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -100,18 +121,33 @@ export default function Filters(props: FiltersProps) {
           </select>
         </div>
         
+        {/* --- NUEVO MÓDULO: MARCAS MULTI-SELECT --- */}
         {isRetro && (
           <div className="space-y-2 animate-fade-in">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Marca</label>
-            <select value={props.brandValue} onChange={(e) => props.onBrandChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none text-slate-700">
-              <option value="">Cualquier Marca</option>
-              <option value="CAT">Caterpillar (CAT)</option>
-              <option value="CASE">CASE</option>
-              <option value="JOHN DEERE">John Deere</option>
-              <option value="JCB">JCB</option>
-              <option value="NEW HOLLAND">New Holland</option>
-              <option value="TEREX">Terex</option>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Marcas</label>
+            <select 
+              onChange={handleAddBrand}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none cursor-pointer"
+            >
+              <option value="">Todas</option>
+              {BRANDS_RETROS.map(b => {
+                if (props.selectedBrands.includes(b)) return null; 
+                return <option key={b} value={b}>{b === 'CAT' ? 'Caterpillar (CAT)' : b}</option>;
+              })}
             </select>
+
+            {props.selectedBrands.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
+                {props.selectedBrands.map(brand => (
+                  <span key={brand} className="bg-slate-100 text-slate-700 text-[10px] pl-2 pr-1 py-1 rounded-md flex items-center gap-1 font-bold border border-slate-300">
+                    {brand === 'CAT' ? 'Caterpillar' : brand}
+                    <button onClick={() => removeBrand(brand)} className="hover:bg-slate-200 rounded-full p-0.5 transition-colors text-slate-500 hover:text-orange-600">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -209,7 +245,7 @@ export default function Filters(props: FiltersProps) {
              <div className="space-y-1">
                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Extensión</label>
                <select value={props.reqExtension} onChange={e => props.onReqExtensionChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
-                 <option value="ALL">Cualquiera</option>
+                 <option value="ALL">Ambas</option>
                  <option value="YES">Extendida</option>
                  <option value="NO">Normal</option>
                </select>
@@ -217,15 +253,15 @@ export default function Filters(props: FiltersProps) {
              <div className="space-y-1">
                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Kit Martillo</label>
                <select value={props.reqHammer} onChange={e => props.onReqHammerChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
-                 <option value="ALL">Cualquiera</option>
-                 <option value="YES">Con Tubería</option>
-                 <option value="NO">Sin Tubería</option>
+                 <option value="ALL">Ambas</option>
+                 <option value="YES">Con Kit</option>
+                 <option value="NO">Sin Kit</option>
                </select>
              </div>
              <div className="space-y-1 col-span-2">
                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cucharón Frontal</label>
                <select value={props.reqClam} onChange={e => props.onReqClamChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
-                 <option value="ALL">Cualquiera</option>
+                 <option value="ALL">Ambas</option>
                  <option value="YES">Bote Almeja (4 en 1)</option>
                  <option value="NO">Uso General</option>
                </select>
@@ -314,7 +350,6 @@ export default function Filters(props: FiltersProps) {
         <div className="space-y-4 bg-orange-50 p-4 rounded-lg border border-orange-200 mt-4 animate-fade-in">
            <p className="text-xs font-black text-orange-800 uppercase tracking-wider mb-2">Especificaciones de Grúa</p>
            
-           {/* NUEVO: Selector de Montaje para Articuladas */}
            {isArticulada && (
              <div className="space-y-2">
                <label className="text-[10px] font-bold text-orange-700 uppercase">Tipo de Montaje</label>
@@ -331,13 +366,21 @@ export default function Filters(props: FiltersProps) {
              <input type="text" placeholder="Ej. National, Terex..." value={props.boomBrandValue} onChange={(e) => props.onBoomBrandChange(e.target.value)} className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
            </div>
            
-           {/* La marca de camión solo aplica para Titanes o Articuladas Montadas */}
            {(isTitan || props.craneMountStatus !== 'DESMONTADA') && (
              <div className="space-y-2">
                <label className="text-[10px] font-bold text-orange-700 uppercase">Marca de Camión</label>
                <input type="text" placeholder="Ej. Peterbilt, Kenworth..." value={props.truckBrandValue} onChange={(e) => props.onTruckBrandChange(e.target.value)} className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
              </div>
            )}
+        </div>
+      )}
+      
+      {props.lastUpdate && (
+        <div className="pt-4 border-t border-slate-100">
+          <p className="text-[10px] text-slate-400 text-center font-medium flex items-center justify-center gap-1.5">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Actualizado: {props.lastUpdate.toLocaleTimeString()}
+          </p>
         </div>
       )}
     </aside>
