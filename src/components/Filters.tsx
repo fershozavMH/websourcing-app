@@ -216,16 +216,16 @@ export default function Filters(props: FiltersProps) {
                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tracción</label>
                <select value={props.req4x4} onChange={e => props.onReq4x4Change(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                  <option value="ALL">Cualquiera</option>
-                 <option value="4WD">4x4 (Doble Tracción)</option>
-                 <option value="2WD">4x2 (Sencilla)</option>
+                 <option value="4WD">4x4</option>
+                 <option value="2WD">4x2</option>
                </select>
              </div>
              <div className="space-y-1">
                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cabina</label>
                <select value={props.reqCabin} onChange={e => props.onReqCabinChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                  <option value="ALL">Cualquiera</option>
-                 <option value="CERRADA">Cerrada (Con A/C)</option>
-                 <option value="ABIERTA">Abierta (OROPS)</option>
+                 <option value="CERRADA">Cerrada</option>
+                 <option value="ABIERTA">Abierta</option>
                </select>
              </div>
              <div className="space-y-1">
