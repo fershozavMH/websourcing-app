@@ -19,6 +19,7 @@ export interface Machine {
   // Propiedades opcionales (las traen las Bombas de Concreto)
   uso_bomba?: number;
   uso_motor?: number;
+  tipo_pluma?: string;
 
   // --- NUEVOS CAMPOS TÉCNICOS (Opcionales con "?" porque FB no los tiene) ---
   motor?: string;

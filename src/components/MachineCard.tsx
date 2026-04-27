@@ -96,7 +96,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
           {machine.titulo}
         </h4>
 
-        {/* Badges de Retroexcavadoras (Ocultos si no hay) */}
+        {/* ETIQUETAS DINÁMICAS (Solo Retroexcavadoras) */}
         {machine.categoria_tarea === 'Retroexcavadoras' && (
           <div className="flex flex-wrap gap-1 mb-4">
             {machine.es_4x4 && <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">4x4</span>}
@@ -104,6 +104,15 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             {machine.tiene_extension && <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">Ext</span>}
             {machine.tiene_martillo && <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">Tubería</span>}
             {machine.tiene_almeja && <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">4-en-1</span>}
+          </div>
+        )}
+
+        {/* NUEVO: ETIQUETAS DINÁMICAS (Solo Bombas de Concreto) */}
+        {machine.categoria_tarea === 'Bombas' && machine.tipo_pluma && (
+          <div className="flex flex-wrap gap-1 mb-4">
+            <span className="bg-blue-50 text-blue-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-blue-200">
+              {machine.tipo_pluma}
+            </span>
           </div>
         )}
 
