@@ -177,9 +177,10 @@ function CatalogApp() {
                 isRefreshing={loading}
                 lastUpdate={lastUpdate}
                 onClearAll={filters.resetAllFilters}
-                onCategoryChange={(val: string) => {
-                  router.push(`/?cat=${encodeURIComponent(val)}`);
-                }}
+                onCategoryChange={(val: string) => { 
+                filters.resetAllFilters(); 
+                router.push(`/?cat=${encodeURIComponent(val)}`); 
+              }}
               />
             </div>
 
