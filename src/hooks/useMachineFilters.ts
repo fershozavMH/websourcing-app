@@ -25,13 +25,24 @@ const getMachineBrand = (m: Machine): string => {
 };
 
 const getMachineModel = (m: Machine): string | null => {
-  if ((m as any).modelo) return (m as any).modelo.toUpperCase();
-  const match = m.titulo.match(/\b([A-Z]*\d+[A-Z]*)\b/i);
-  if (match) {
-      const num = parseInt(match[1]);
-      if (isNaN(num) || num < 1980 || num > 2030) {
-          return match[1].toUpperCase();
+  // 1. Si el scraper nuevo ya guardó el modelo oficial en Firebase, lo usamos
+  if (m.modelo) return m.modelo.toUpperCase();
+  
+  // 2. Lógica para máquinas viejas (sin el dato en base de datos)
+  const regex = /\b([A-Z]*\d+[A-Z\d]*)\b/gi;
+  let match;
+  
+  while ((match = regex.exec(m.titulo)) !== null) {
+      const str = match[1].toUpperCase();
+      const num = parseInt(str);
+      
+      // Si el número encontrado es el AÑO (ej. "2015"), lo ignoramos y seguimos buscando
+      if (!isNaN(num) && num >= 1980 && num <= 2030 && str.length === 4) {
+          continue;
       }
+      
+      // Si llegamos aquí, encontramos el verdadero modelo
+      return str;
   }
   return null;
 };
@@ -42,7 +53,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [sortValue, setSortValue] = useState<SortOption>('recent');
   
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]); // <-- RECUPERADO
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [selectedEngines, setSelectedEngines] = useState<string[]>([]);
@@ -133,7 +144,6 @@ export const useMachineFilters = (machines: Machine[]) => {
 
       const loc = (m.ubicacion || "").toLowerCase();
 
-      // 4. País de Ubicación
       if (selectedCountries.length > 0) {
           const isCanada = /\b(ab|bc|mb|nb|nl|ns|on|pe|qc|sk)\b|canada/i.test(loc);
           const isMexico = /mexico|méxico|mx/i.test(loc);
@@ -145,10 +155,9 @@ export const useMachineFilters = (machines: Machine[]) => {
           if (!matchesCountry) return false;
       }
 
-      // 4.5 Estados y Regiones (RECUPERADO)
       if (selectedStates.length > 0) {
           const matchesAnyState = selectedStates.some(st => {
-              const parts = st.split(' - '); // Ej: ["TX", "Texas"]
+              const parts = st.split(' - '); 
               const abbr = parts[0].toLowerCase();
               const fullName = parts[1] ? parts[1].toLowerCase() : '';
               return new RegExp(`\\b${abbr}\\b`, 'i').test(loc) || (fullName && loc.includes(fullName));
@@ -266,7 +275,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     searchValue, onSearchChange: setSearchValue,
     
     selectedCountries, onSelectedCountriesChange: setSelectedCountries, availableCountries,
-    selectedStates, onSelectedStatesChange: setSelectedStates, // <-- EXPORTADO
+    selectedStates, onSelectedStatesChange: setSelectedStates,
     selectedBrands, onSelectedBrandsChange: setSelectedBrands, availableBrands,
     selectedModels, onSelectedModelsChange: setSelectedModels, availableModels,
     selectedEngines, onSelectedEnginesChange: setSelectedEngines, availableEngines,

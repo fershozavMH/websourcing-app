@@ -32,6 +32,7 @@ export interface Machine {
   capacidad?: string;
   marca_pluma?: string;
   marca_camion?: string;
+  modelo?: string;
   
   // Otros campos que podrías usar en el futuro
   es_subasta?: boolean;
