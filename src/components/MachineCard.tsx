@@ -16,21 +16,25 @@ export default function MachineCard({ machine }: { machine: Machine }) {
   };
 
   const renderUso = () => {
-    if (machine.uso_motor && machine.uso_bomba && machine.uso_motor > 0 && machine.uso_bomba > 0) {
+    // Leemos TODAS las variables para que sea compatible con lo viejo y lo nuevo
+    const millas = machine.uso_millas || machine.uso_motor || 0;
+    const horas = machine.uso_horas || machine.uso_bomba || machine.uso || 0;
+
+    if (millas > 0 && horas > 0) {
       return (
         <div className="flex flex-col leading-tight mt-0.5">
-          <span className="font-black text-slate-800">{machine.uso_motor.toLocaleString()} mi</span>
-          <span className="text-[10px] text-slate-500 font-bold">{machine.uso_bomba.toLocaleString()} hrs (PTO)</span>
+          <span className="font-black text-slate-800">{millas.toLocaleString()} mi</span>
+          <span className="text-[10px] text-slate-500 font-bold">{horas.toLocaleString()} hrs</span>
         </div>
       );
     }
-    if (machine.uso_motor && machine.uso_motor > 0) {
-      return <span className="font-black text-slate-800">{machine.uso_motor.toLocaleString()} mi</span>;
+    if (millas > 0) {
+      return <span className="font-black text-slate-800">{millas.toLocaleString()} mi</span>;
     }
-    if (machine.uso_bomba && machine.uso_bomba > 0) {
-      return <span className="font-black text-slate-800">{machine.uso_bomba.toLocaleString()} hrs</span>;
+    if (horas > 0) {
+      return <span className="font-black text-slate-800">{horas.toLocaleString()} hrs</span>;
     }
-    return <span className="font-black text-slate-800">{(machine.uso || 0).toLocaleString()} {isTruck ? 'mi' : 'hrs'}</span>;
+    return <span className="font-black text-slate-800">N/D</span>;
   };
 
   const phoneClean = machine.telefono_vendedor ? machine.telefono_vendedor.replace(/[^\d+]/g, '') : '';
