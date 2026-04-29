@@ -79,7 +79,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [req4x4, setReq4x4] = useState('ALL');
   const [reqClam, setReqClam] = useState('ALL');
 
-  const availableCountries = useMemo(() => ['USA', 'Canadá', 'México'], []);
+  const availableCountries = useMemo(() => ['USA', 'Canadá'], []);
   
   const availableBrands = useMemo(() => {
       const brands = new Set<string>();
@@ -146,12 +146,10 @@ export const useMachineFilters = (machines: Machine[]) => {
 
       if (selectedCountries.length > 0) {
           const isCanada = /\b(ab|bc|mb|nb|nl|ns|on|pe|qc|sk)\b|canada/i.test(loc);
-          const isMexico = /mexico|méxico|mx/i.test(loc);
-          const isUSA = !isCanada && !isMexico; 
+          const isUSA = !isCanada; 
           let matchesCountry = false;
           if (selectedCountries.includes('USA') && isUSA) matchesCountry = true;
           if (selectedCountries.includes('Canadá') && isCanada) matchesCountry = true;
-          if (selectedCountries.includes('México') && isMexico) matchesCountry = true;
           if (!matchesCountry) return false;
       }
 
