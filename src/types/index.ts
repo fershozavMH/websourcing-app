@@ -12,7 +12,12 @@ export interface Machine {
   imagenes: string[];
   precio: number;
   año: number;
-  uso: number; // Horas o Millas generales
+  
+  // --- VARIABLES DE DESGASTE ---
+  uso?: number;         // Opcional: Compatibilidad con equipo viejo/amarillo
+  uso_millas?: number;  // NUEVO: Distancia en camiones
+  uso_horas?: number;   // NUEVO: Desgaste de motor en camiones/maquinaria
+  
   ubicacion: string;
   telefono_vendedor: string;
   
@@ -28,7 +33,6 @@ export interface Machine {
   marca_pluma?: string;
   marca_camion?: string;
   
-
   // Otros campos que podrías usar en el futuro
   es_subasta?: boolean;
   timestamp?: any; 
@@ -38,5 +42,4 @@ export interface Machine {
   tiene_extension?: boolean;
   es_4x4?: boolean;
   tiene_almeja?: boolean;
-
 }
