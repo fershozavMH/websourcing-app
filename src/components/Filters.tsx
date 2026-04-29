@@ -24,8 +24,14 @@ const MultiSelectModal = ({
     if (!isOpen) return null;
 
     return (
-       <div className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[85vh] animate-fade-in">
+       <div 
+         className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+         onClick={onClose} 
+       >
+         <div 
+           className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[85vh] animate-fade-in"
+           onClick={(e) => e.stopPropagation()} 
+         >
            <div className="p-4 border-b border-slate-100 flex justify-between items-center">
              <h4 className="font-black text-slate-800">{title}</h4>
              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
