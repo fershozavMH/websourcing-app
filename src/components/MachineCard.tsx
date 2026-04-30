@@ -125,6 +125,23 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             </span>
           </div>
         )}
+        
+        {/* NUEVAS ETIQUETAS PARA VOLTEOS Y MOTOCONFORMADORAS */}
+        {machine.categoria_tarea === 'Camiones Volteo' && machine.traccion_camion && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            <span className="bg-orange-50 text-orange-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-orange-200">
+              {machine.traccion_camion}
+            </span>
+          </div>
+        )}
+        
+        {machine.categoria_tarea === 'Motoconformadoras' && machine.tiene_ripper && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">
+              Con Ripper
+            </span>
+          </div>
+        )}
 
         {/* DATOS PRINCIPALES: Grid 2x2 */}
         <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-4">
@@ -153,9 +170,14 @@ export default function MachineCard({ machine }: { machine: Machine }) {
               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Motor</p>
               <p className="text-[10px] font-bold text-slate-700 truncate" title={machine.motor}>{machine.motor || 'N/D'}</p>
             </div>
+            {/* Lógica inteligente para mostrar Ejes en Volteos y Capacidad en los demás */}
             <div className="overflow-hidden border-l border-r border-slate-200 px-2">
-              <p className="text-[8px] text-orange-500 font-bold uppercase tracking-wider mb-0.5">Capacidad</p>
-              <p className="text-[10px] font-black text-slate-800 truncate" title={machine.capacidad}>{machine.capacidad || 'N/D'}</p>
+              <p className="text-[8px] text-orange-500 font-bold uppercase tracking-wider mb-0.5">
+                {machine.categoria_tarea === 'Camiones Volteo' ? 'Ejes' : 'Capacidad'}
+              </p>
+              <p className="text-[10px] font-black text-slate-800 truncate" title={machine.categoria_tarea === 'Camiones Volteo' ? machine.ejes_traseros : machine.capacidad}>
+                {machine.categoria_tarea === 'Camiones Volteo' ? (machine.ejes_traseros || 'N/D') : (machine.capacidad || 'N/D')}
+              </p>
             </div>
             <div className="overflow-hidden pl-1">
               <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Transm.</p>

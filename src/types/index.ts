@@ -33,6 +33,8 @@ export interface Machine {
   marca_pluma?: string;
   marca_camion?: string;
   modelo?: string;
+  traccion_camion?: string;
+  ejes_traseros?: string;
   
   // Otros campos que podrías usar en el futuro
   es_subasta?: boolean;
@@ -43,4 +45,5 @@ export interface Machine {
   tiene_extension?: boolean;
   es_4x4?: boolean;
   tiene_almeja?: boolean;
+  tiene_ripper?: boolean;
 }

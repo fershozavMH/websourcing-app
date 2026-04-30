@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { Machine, SortOption } from '@/types';
 
-// Utilidades para extracción inteligente
 const getMachineBrand = (m: Machine): string => {
   if (m.marca_camion) return m.marca_camion.toUpperCase();
   if (m.marca_pluma) return m.marca_pluma.toUpperCase();
@@ -25,23 +24,13 @@ const getMachineBrand = (m: Machine): string => {
 };
 
 const getMachineModel = (m: Machine): string | null => {
-  // 1. Si el scraper nuevo ya guardó el modelo oficial en Firebase, lo usamos
-  if (m.modelo) return m.modelo.toUpperCase();
-  
-  // 2. Lógica para máquinas viejas (sin el dato en base de datos)
+  if ((m as any).modelo) return (m as any).modelo.toUpperCase();
   const regex = /\b([A-Z]*\d+[A-Z\d]*)\b/gi;
   let match;
-  
   while ((match = regex.exec(m.titulo)) !== null) {
       const str = match[1].toUpperCase();
       const num = parseInt(str);
-      
-      // Si el número encontrado es el AÑO (ej. "2015"), lo ignoramos y seguimos buscando
-      if (!isNaN(num) && num >= 1980 && num <= 2030 && str.length === 4) {
-          continue;
-      }
-      
-      // Si llegamos aquí, encontramos el verdadero modelo
+      if (!isNaN(num) && num >= 1980 && num <= 2030 && str.length === 4) continue;
       return str;
   }
   return null;
@@ -70,6 +59,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [maxMilesValue, setMaxMilesValue] = useState('');
   const [transmissionValue, setTransmissionValue] = useState('ALL');
 
+  // --- FILTROS DE CAMIONES / GRÚAS / BOMBAS ---
   const [boomBrandValue, setBoomBrandValue] = useState('');
   const [craneMountStatus, setCraneMountStatus] = useState('ALL');
   const [boomTypeValue, setBoomTypeValue] = useState('ALL');
@@ -78,9 +68,16 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [reqExtension, setReqExtension] = useState('ALL');
   const [req4x4, setReq4x4] = useState('ALL');
   const [reqClam, setReqClam] = useState('ALL');
-
-  const availableCountries = useMemo(() => ['USA', 'Canadá'], []);
+  const [reqRipper, setReqRipper] = useState('ALL');
   
+  // NUEVOS FILTROS MÚLTIPLES DE CHASIS (PIPAS Y VOLTEOS)
+  const [selectedTracciones, setSelectedTracciones] = useState<string[]>([]);
+  const [selectedEjes, setSelectedEjes] = useState<string[]>([]);
+  
+  const availableTracciones = useMemo(() => ['4X2', '4X4', '6X4', '6X6', '8X4', '8X6'], []);
+  const availableEjes = useMemo(() => ['SINGLE', 'TANDEM', 'TRI', 'QUAD'], []);
+
+  const availableCountries = useMemo(() => ['USA', 'Canadá', 'México'], []);
   const availableBrands = useMemo(() => {
       const brands = new Set<string>();
       machines.forEach(m => {
@@ -120,6 +117,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     setMinMilesValue(''); setMaxMilesValue(''); setTransmissionValue('ALL');
     setBoomBrandValue(''); setCraneMountStatus('ALL'); setBoomTypeValue('ALL');
     setReqCabin('ALL'); setReqHammer('ALL'); setReqExtension('ALL'); setReq4x4('ALL'); setReqClam('ALL');
+    setReqRipper('ALL'); setSelectedTracciones([]); setSelectedEjes([]);
   };
 
   const filteredMachines = useMemo(() => {
@@ -146,10 +144,12 @@ export const useMachineFilters = (machines: Machine[]) => {
 
       if (selectedCountries.length > 0) {
           const isCanada = /\b(ab|bc|mb|nb|nl|ns|on|pe|qc|sk)\b|canada/i.test(loc);
-          const isUSA = !isCanada; 
+          const isMexico = /mexico|méxico|mx/i.test(loc);
+          const isUSA = !isCanada && !isMexico; 
           let matchesCountry = false;
           if (selectedCountries.includes('USA') && isUSA) matchesCountry = true;
           if (selectedCountries.includes('Canadá') && isCanada) matchesCountry = true;
+          if (selectedCountries.includes('México') && isMexico) matchesCountry = true;
           if (!matchesCountry) return false;
       }
 
@@ -167,13 +167,11 @@ export const useMachineFilters = (machines: Machine[]) => {
           const mBrand = getMachineBrand(m);
           if (!selectedBrands.includes(mBrand)) return false;
       }
-      
       if (selectedModels.length > 0) {
           const mModel = getMachineModel(m);
           const matchesModel = selectedModels.some(modelOpt => (mModel && mModel === modelOpt) || m.titulo.toUpperCase().includes(modelOpt));
           if (!matchesModel) return false;
       }
-
       if (m.año > 0 && (m.año < minY || m.año > maxY)) return false;
 
       if (minCapacityValue || maxCapacityValue) {
@@ -190,7 +188,6 @@ export const useMachineFilters = (machines: Machine[]) => {
           }
           if (valCap < minCap || valCap > maxCap) return false;
       }
-
       if (m.precio > 0 && (m.precio < minP || m.precio > maxP)) return false;
 
       let machineHours = 0;
@@ -225,6 +222,25 @@ export const useMachineFilters = (machines: Machine[]) => {
           if (transmissionValue === 'AUTOMATICA' && !mTrans.includes('auto')) return false;
       }
 
+      // --- FILTROS MULTIPLES DE PIPAS Y VOLTEOS ---
+      if (m.categoria_tarea === 'Camiones Pipa' || m.categoria_tarea === 'Camiones Volteo') {
+          if (selectedTracciones.length > 0) {
+              const mTracc = (mDynamic.traccion_camion || "").toUpperCase();
+              if (!selectedTracciones.some(tOpt => mTracc.includes(tOpt))) return false;
+          }
+          if (selectedEjes.length > 0) {
+              const mEjes = (mDynamic.ejes_traseros || "").toUpperCase();
+              if (!selectedEjes.some(eOpt => mEjes.includes(eOpt))) return false;
+          }
+      }
+
+      // --- FILTRO DE MOTONIVELADORAS ---
+      if (m.categoria_tarea === 'Motoconformadoras') {
+          if (reqRipper === 'YES' && !mDynamic.tiene_ripper) return false;
+          if (reqRipper === 'NO' && mDynamic.tiene_ripper) return false;
+      }
+
+      // --- OTROS FILTROS ESPECIALES ---
       if (m.categoria_tarea === 'Bombas' && boomTypeValue !== 'ALL') {
           const t = (m.titulo + ' ' + (m.tipo_pluma || '')).toLowerCase();
           if (boomTypeValue === 'Z') {
@@ -265,19 +281,16 @@ export const useMachineFilters = (machines: Machine[]) => {
       if (sortValue === 'year_desc') return b.año - a.año;
       return 0; 
     });
-  }, [machines, searchValue, categoryValue, selectedCountries, selectedStates, selectedBrands, selectedModels, selectedEngines, minPriceValue, maxPriceValue, minYearValue, maxYearValue, minHoursValue, maxHoursValue, minMilesValue, maxMilesValue, minCapacityValue, maxCapacityValue, transmissionValue, sortValue, boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer, reqExtension, req4x4, reqClam]);
+  }, [machines, searchValue, categoryValue, selectedCountries, selectedStates, selectedBrands, selectedModels, selectedEngines, minPriceValue, maxPriceValue, minYearValue, maxYearValue, minHoursValue, maxHoursValue, minMilesValue, maxMilesValue, minCapacityValue, maxCapacityValue, transmissionValue, sortValue, boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer, reqExtension, req4x4, reqClam, selectedTracciones, selectedEjes, reqRipper]);
 
   return {
-    categoryValue, setCategoryValue,
-    resetAllFilters, filteredMachines,
+    categoryValue, setCategoryValue, resetAllFilters, filteredMachines,
     searchValue, onSearchChange: setSearchValue,
-    
     selectedCountries, onSelectedCountriesChange: setSelectedCountries, availableCountries,
     selectedStates, onSelectedStatesChange: setSelectedStates,
     selectedBrands, onSelectedBrandsChange: setSelectedBrands, availableBrands,
     selectedModels, onSelectedModelsChange: setSelectedModels, availableModels,
     selectedEngines, onSelectedEnginesChange: setSelectedEngines, availableEngines,
-    
     minPriceValue, onMinPriceChange: setMinPriceValue,
     maxPriceValue, onMaxPriceChange: setMaxPriceValue,
     minYearValue, onMinYearChange: setMinYearValue,
@@ -296,6 +309,11 @@ export const useMachineFilters = (machines: Machine[]) => {
     boomTypeValue, onBoomTypeValueChange: setBoomTypeValue,
     reqCabin, onReqCabinChange: setReqCabin, reqHammer, onReqHammerChange: setReqHammer,
     reqExtension, onReqExtensionChange: setReqExtension, req4x4, onReq4x4Change: setReq4x4,
-    reqClam, onReqClamChange: setReqClam
+    reqClam, onReqClamChange: setReqClam,
+    
+    // EXPORTAR NUEVOS FILTROS MODALES
+    selectedTracciones, onSelectedTraccionesChange: setSelectedTracciones, availableTracciones,
+    selectedEjes, onSelectedEjesChange: setSelectedEjes, availableEjes,
+    reqRipper, onReqRipperChange: setReqRipper
   };
 };

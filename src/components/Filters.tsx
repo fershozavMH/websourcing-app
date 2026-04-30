@@ -63,7 +63,8 @@ const MultiSelectModal = ({
 };
 
 export default function Filters(props: any) {
-  const [activeModal, setActiveModal] = useState<'PAIS' | 'ESTADO' | 'MARCA' | 'MODELO' | 'MOTOR' | null>(null);
+  // Añadimos 'TRACCION' y 'EJES' a las opciones del Modal
+  const [activeModal, setActiveModal] = useState<'PAIS' | 'ESTADO' | 'MARCA' | 'MODELO' | 'MOTOR' | 'TRACCION' | 'EJES' | null>(null);
 
   // --- VARIABLES CONDICIONALES PARA MOSTRAR/OCULTAR FILTROS ---
   const isBomba = props.categoryValue === 'Bombas';
@@ -71,7 +72,7 @@ export default function Filters(props: any) {
   const isGrua = props.categoryValue === 'Gruas Titanes' || props.categoryValue === 'Gruas Articuladas';
   const isArticulada = props.categoryValue === 'Gruas Articuladas';
   const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(props.categoryValue);
-
+  
   // Variable Maestra: Determina si se deben mostrar los filtros propios de vehículos de carretera o capacidad
   const showTruckFilters = props.categoryValue === 'ALL' || isPureTruck || isGrua || isBomba;
 
@@ -310,6 +311,32 @@ export default function Filters(props: any) {
           </div>
         )}
 
+        {/* MÓDULO EXCLUSIVO PARA PIPAS Y VOLTEOS (AHORA CON MODALES) */}
+        {(props.categoryValue === 'Camiones Pipa' || props.categoryValue === 'Camiones Volteo') && (
+          <div className="space-y-3 bg-cyan-50 p-4 rounded-xl border border-cyan-100 animate-fade-in mt-4">
+             <label className="text-[11px] font-black text-cyan-800 uppercase tracking-wider flex items-center gap-2">
+                Especificaciones de Chasis
+             </label>
+             {renderMultiSelectTrigger("Tracción", "TRACCION", props.selectedTracciones, (val) => props.onSelectedTraccionesChange(props.selectedTracciones.filter((t: string) => t !== val)))}
+             {renderMultiSelectTrigger("Ejes Traseros", "EJES", props.selectedEjes, (val) => props.onSelectedEjesChange(props.selectedEjes.filter((e: string) => e !== val)))}
+          </div>
+        )}
+
+        {/* MÓDULO EXCLUSIVO PARA MOTONIVELADORAS */}
+        {props.categoryValue === 'Motoconformadoras' && (
+          <>
+            <hr className="border-slate-100" />
+            <div className="space-y-2 animate-fade-in">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ripper / Escarificador</label>
+              <select value={props.reqRipper} onChange={e => props.onReqRipperChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none text-slate-700">
+                <option value="ALL">Cualquiera</option>
+                <option value="YES">Con Ripper</option>
+                <option value="NO">Sin Ripper</option>
+              </select>
+            </div>
+          </>
+        )}
+
       </aside>
 
       {/* RENDERIZADO DE MODALES GLOBALES */}
@@ -332,6 +359,16 @@ export default function Filters(props: any) {
       <MultiSelectModal 
           isOpen={activeModal === 'MOTOR'} onClose={() => setActiveModal(null)} 
           title="Seleccionar Motores" options={props.availableEngines} selected={props.selectedEngines} onApply={props.onSelectedEnginesChange} 
+      />
+      
+      {/* NUEVOS MODALES DE CHASIS */}
+      <MultiSelectModal 
+          isOpen={activeModal === 'TRACCION'} onClose={() => setActiveModal(null)} 
+          title="Seleccionar Tracción" options={props.availableTracciones} selected={props.selectedTracciones} onApply={props.onSelectedTraccionesChange} 
+      />
+      <MultiSelectModal 
+          isOpen={activeModal === 'EJES'} onClose={() => setActiveModal(null)} 
+          title="Seleccionar Ejes Traseros" options={props.availableEjes} selected={props.selectedEjes} onApply={props.onSelectedEjesChange} 
       />
     </>
   );
