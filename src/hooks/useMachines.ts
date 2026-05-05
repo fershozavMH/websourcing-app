@@ -11,13 +11,14 @@ export const useMachines = () => {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   const fetchInitialData = useCallback(async (categoryToFetch: string) => {
-    setLoading(true); 
+    setLoading(true);
     setMachines([]);
     try {
       const colRef = collection(db, 'maquinaria_aprobada');
-      let q = categoryToFetch === 'ALL' 
+      const categoryForQuery = (categoryToFetch === 'Rough Terrain' || categoryToFetch === 'All Terrain') ? 'rough_terrain' : categoryToFetch;
+      let q = categoryForQuery === 'ALL'
         ? query(colRef, orderBy('timestamp', 'desc'), limit(MAX_FETCH_LIMIT))
-        : query(colRef, where('categoria_tarea', '==', categoryToFetch), orderBy('timestamp', 'desc'), limit(MAX_FETCH_LIMIT));
+        : query(colRef, where('categoria_tarea', '==', categoryForQuery), orderBy('timestamp', 'desc'), limit(MAX_FETCH_LIMIT));
       
       const snapshot = await getDocs(q); 
       const newMachines = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Machine));

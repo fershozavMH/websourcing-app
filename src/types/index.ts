@@ -46,4 +46,11 @@ export interface Machine {
   es_4x4?: boolean;
   tiene_almeja?: boolean;
   tiene_ripper?: boolean;
+
+  // --- NUEVOS CAMPOS PARA ELEVADORES ---
+  subtipo_elevador?: string;
+  combustible?: string;
+  alcance?: number;
+  
+  subtipo_grua_terreno?: string;
 }

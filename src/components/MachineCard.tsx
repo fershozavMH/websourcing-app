@@ -125,6 +125,51 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             </span>
           </div>
         )}
+
+        {machine.categoria_tarea === 'Elevadores' && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {machine.subtipo_elevador && (
+              <span className="bg-purple-50 text-purple-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-purple-200">
+                {machine.subtipo_elevador}
+              </span>
+            )}
+            {machine.combustible && (
+              <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-emerald-200">
+                {machine.combustible}
+              </span>
+            )}
+            {machine.alcance && machine.alcance > 0 ? (
+              <span className="bg-sky-50 text-sky-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-sky-200">
+                {machine.alcance} FT
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        {machine.categoria_tarea === 'rough_terrain' && (
+          <div className="flex flex-wrap gap-1.5 mb-4">
+            {machine.subtipo_grua_terreno && (
+              <span className="bg-slate-800 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase shadow-sm">
+                {machine.subtipo_grua_terreno}
+              </span>
+            )}
+            {machine.capacidad && (
+              <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-emerald-200">
+                {machine.capacidad}
+              </span>
+            )}
+            {machine.alcance && machine.alcance > 0 ? (
+              <span className="bg-sky-50 text-sky-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-sky-200">
+                {machine.alcance} FT
+              </span>
+            ) : null}
+            {machine.es_4x4 && (
+              <span className="bg-orange-50 text-orange-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-orange-200">
+                4X4 / AWD
+              </span>
+            )}
+          </div>
+        )}
         
         {/* NUEVAS ETIQUETAS PARA VOLTEOS Y MOTOCONFORMADORAS */}
         {machine.categoria_tarea === 'Camiones Volteo' && machine.traccion_camion && (

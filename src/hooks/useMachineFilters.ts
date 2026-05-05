@@ -59,7 +59,6 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [maxMilesValue, setMaxMilesValue] = useState('');
   const [transmissionValue, setTransmissionValue] = useState('ALL');
 
-  // --- FILTROS DE CAMIONES / GRÚAS / BOMBAS ---
   const [boomBrandValue, setBoomBrandValue] = useState('');
   const [craneMountStatus, setCraneMountStatus] = useState('ALL');
   const [boomTypeValue, setBoomTypeValue] = useState('ALL');
@@ -69,11 +68,16 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [req4x4, setReq4x4] = useState('ALL');
   const [reqClam, setReqClam] = useState('ALL');
   const [reqRipper, setReqRipper] = useState('ALL');
+  const [reqSubtipoGruaTerreno, setReqSubtipoGruaTerreno] = useState('ALL');
   
-  // NUEVOS FILTROS MÚLTIPLES DE CHASIS (PIPAS Y VOLTEOS)
   const [selectedTracciones, setSelectedTracciones] = useState<string[]>([]);
   const [selectedEjes, setSelectedEjes] = useState<string[]>([]);
   
+  const [reqSubtipoElevador, setReqSubtipoElevador] = useState('ALL');
+  const [reqCombustible, setReqCombustible] = useState('ALL');
+  const [minAlcanceValue, setMinAlcanceValue] = useState('');
+  const [maxAlcanceValue, setMaxAlcanceValue] = useState('');
+
   const availableTracciones = useMemo(() => ['4X2', '4X4', '6X4', '6X6', '8X4', '8X6'], []);
   const availableEjes = useMemo(() => ['SINGLE', 'TANDEM', 'TRI', 'QUAD'], []);
 
@@ -81,7 +85,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const availableBrands = useMemo(() => {
       const brands = new Set<string>();
       machines.forEach(m => {
-          if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue) return;
+          if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue && m.categoria_tarea !== 'rough_terrain') return;
           const brand = getMachineBrand(m);
           if (brand !== 'OTRA') brands.add(brand);
       });
@@ -91,7 +95,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const availableModels = useMemo(() => {
       const models = new Set<string>();
       machines.forEach(m => {
-          if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue) return;
+          if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue && m.categoria_tarea !== 'rough_terrain') return;
           const mBrand = getMachineBrand(m);
           if (selectedBrands.length > 0 && !selectedBrands.includes(mBrand)) return;
           const model = getMachineModel(m);
@@ -103,7 +107,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const availableEngines = useMemo(() => {
       const engines = new Set<string>();
       machines.forEach(m => {
-          if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue) return;
+          if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue && m.categoria_tarea !== 'rough_terrain') return;
           if (m.motor) engines.add(m.motor.toUpperCase());
       });
       return Array.from(engines).sort();
@@ -118,6 +122,8 @@ export const useMachineFilters = (machines: Machine[]) => {
     setBoomBrandValue(''); setCraneMountStatus('ALL'); setBoomTypeValue('ALL');
     setReqCabin('ALL'); setReqHammer('ALL'); setReqExtension('ALL'); setReq4x4('ALL'); setReqClam('ALL');
     setReqRipper('ALL'); setSelectedTracciones([]); setSelectedEjes([]);
+    setReqSubtipoElevador('ALL'); setReqCombustible('ALL'); setMinAlcanceValue(''); setMaxAlcanceValue('');
+    setReqSubtipoGruaTerreno('ALL');
   };
 
   const filteredMachines = useMemo(() => {
@@ -138,7 +144,11 @@ export const useMachineFilters = (machines: Machine[]) => {
           const generalText = `${m.titulo} ${m.origen_tarea} ${m.marca_pluma || ''} ${m.marca_camion || ''}`.toLowerCase();
           if (!generalText.includes(term)) return false;
       }
-      if (categoryValue !== 'ALL' && m.categoria_tarea !== categoryValue) return false;
+      
+      // MAGIA AQUÍ: Traductor de categorías para conectar el Frontend con Firebase
+      const normalizedCategory = (categoryValue === 'Rough Terrain' || categoryValue === 'All Terrain') ? 'rough_terrain' : categoryValue;
+
+      if (normalizedCategory !== 'ALL' && m.categoria_tarea !== normalizedCategory) return false;
 
       const loc = (m.ubicacion || "").toLowerCase();
 
@@ -222,7 +232,6 @@ export const useMachineFilters = (machines: Machine[]) => {
           if (transmissionValue === 'AUTOMATICA' && !mTrans.includes('auto')) return false;
       }
 
-      // --- FILTROS MULTIPLES DE PIPAS Y VOLTEOS ---
       if (m.categoria_tarea === 'Camiones Pipa' || m.categoria_tarea === 'Camiones Volteo') {
           if (selectedTracciones.length > 0) {
               const mTracc = (mDynamic.traccion_camion || "").toUpperCase();
@@ -234,13 +243,50 @@ export const useMachineFilters = (machines: Machine[]) => {
           }
       }
 
-      // --- FILTRO DE MOTONIVELADORAS ---
       if (m.categoria_tarea === 'Motoconformadoras') {
           if (reqRipper === 'YES' && !mDynamic.tiene_ripper) return false;
           if (reqRipper === 'NO' && mDynamic.tiene_ripper) return false;
       }
 
-      // --- OTROS FILTROS ESPECIALES ---
+      if (m.categoria_tarea === 'Elevadores') {
+          if (reqSubtipoElevador !== 'ALL') {
+              const subtipoBD = (mDynamic.subtipo_elevador || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              const reqSubtipo = reqSubtipoElevador.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              if (subtipoBD !== reqSubtipo) return false;
+          }
+          if (reqCombustible !== 'ALL') {
+              const combBD = (mDynamic.combustible || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              const reqComb = reqCombustible.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+              if (combBD !== reqComb) return false;
+          }
+          if (minAlcanceValue || maxAlcanceValue) {
+              const alcance = mDynamic.alcance || 0;
+              const minA = minAlcanceValue ? parseInt(minAlcanceValue) : 0;
+              const maxA = maxAlcanceValue ? parseInt(maxAlcanceValue) : Infinity;
+              if (alcance < minA || alcance > maxA) return false;
+          }
+      }
+      
+      // --- FILTRO INTELIGENTE DE GRÚAS TERRENO ---
+      if (normalizedCategory === 'rough_terrain') {
+          let requiredSubtype = reqSubtipoGruaTerreno;
+          
+          // Si seleccionaste la grúa específica desde tu menú principal, forzamos el subtipo internamente
+          if (categoryValue === 'Rough Terrain') requiredSubtype = 'ROUGH TERRAIN';
+          if (categoryValue === 'All Terrain') requiredSubtype = 'ALL TERRAIN';
+
+          if (requiredSubtype !== 'ALL') {
+              const subtipoBD = (mDynamic.subtipo_grua_terreno || m.origen_tarea || "").toUpperCase();
+              if (!subtipoBD.includes(requiredSubtype)) return false;
+          }
+          if (minAlcanceValue || maxAlcanceValue) {
+              const alcance = mDynamic.alcance || 0;
+              const minA = minAlcanceValue ? parseInt(minAlcanceValue) : 0;
+              const maxA = maxAlcanceValue ? parseInt(maxAlcanceValue) : Infinity;
+              if (alcance < minA || alcance > maxA) return false;
+          }
+      }
+
       if (m.categoria_tarea === 'Bombas' && boomTypeValue !== 'ALL') {
           const t = (m.titulo + ' ' + (m.tipo_pluma || '')).toLowerCase();
           if (boomTypeValue === 'Z') {
@@ -281,7 +327,15 @@ export const useMachineFilters = (machines: Machine[]) => {
       if (sortValue === 'year_desc') return b.año - a.año;
       return 0; 
     });
-  }, [machines, searchValue, categoryValue, selectedCountries, selectedStates, selectedBrands, selectedModels, selectedEngines, minPriceValue, maxPriceValue, minYearValue, maxYearValue, minHoursValue, maxHoursValue, minMilesValue, maxMilesValue, minCapacityValue, maxCapacityValue, transmissionValue, sortValue, boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer, reqExtension, req4x4, reqClam, selectedTracciones, selectedEjes, reqRipper]);
+  }, [
+    machines, searchValue, categoryValue, selectedCountries, selectedStates, 
+    selectedBrands, selectedModels, selectedEngines, minPriceValue, maxPriceValue, 
+    minYearValue, maxYearValue, minHoursValue, maxHoursValue, minMilesValue, 
+    maxMilesValue, minCapacityValue, maxCapacityValue, transmissionValue, sortValue, 
+    boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer, 
+    reqExtension, req4x4, reqClam, selectedTracciones, selectedEjes, reqRipper, 
+    reqSubtipoElevador, reqCombustible, minAlcanceValue, maxAlcanceValue, reqSubtipoGruaTerreno
+  ]);
 
   return {
     categoryValue, setCategoryValue, resetAllFilters, filteredMachines,
@@ -311,9 +365,14 @@ export const useMachineFilters = (machines: Machine[]) => {
     reqExtension, onReqExtensionChange: setReqExtension, req4x4, onReq4x4Change: setReq4x4,
     reqClam, onReqClamChange: setReqClam,
     
-    // EXPORTAR NUEVOS FILTROS MODALES
     selectedTracciones, onSelectedTraccionesChange: setSelectedTracciones, availableTracciones,
     selectedEjes, onSelectedEjesChange: setSelectedEjes, availableEjes,
-    reqRipper, onReqRipperChange: setReqRipper
+    reqRipper, onReqRipperChange: setReqRipper,
+
+    reqSubtipoElevador, onReqSubtipoElevadorChange: setReqSubtipoElevador,
+    reqCombustible, onReqCombustibleChange: setReqCombustible,
+    minAlcanceValue, onMinAlcanceChange: setMinAlcanceValue,
+    maxAlcanceValue, onMaxAlcanceChange: setMaxAlcanceValue,
+    reqSubtipoGruaTerreno, onReqSubtipoGruaTerrenoChange: setReqSubtipoGruaTerreno
   };
 };

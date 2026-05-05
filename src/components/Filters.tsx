@@ -63,20 +63,20 @@ const MultiSelectModal = ({
 };
 
 export default function Filters(props: any) {
-  // Añadimos 'TRACCION' y 'EJES' a las opciones del Modal
   const [activeModal, setActiveModal] = useState<'PAIS' | 'ESTADO' | 'MARCA' | 'MODELO' | 'MOTOR' | 'TRACCION' | 'EJES' | null>(null);
 
   // --- VARIABLES CONDICIONALES PARA MOSTRAR/OCULTAR FILTROS ---
-  const isBomba = props.categoryValue === 'Bombas';
-  const isRetro = props.categoryValue === 'Retroexcavadoras';
-  const isGrua = props.categoryValue === 'Gruas Titanes' || props.categoryValue === 'Gruas Articuladas';
-  const isArticulada = props.categoryValue === 'Gruas Articuladas';
-  const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(props.categoryValue);
+  // Utilizamos la variable traducida para gobernar qué filtros visuales encender
+  const normalizedCategory = ['Rough Terrain', 'All Terrain'].includes(props.categoryValue) ? 'rough_terrain' : props.categoryValue;
+
+  const isBomba = normalizedCategory === 'Bombas';
+  const isRetro = normalizedCategory === 'Retroexcavadoras';
+  const isGrua = ['Gruas Titanes', 'Gruas Articuladas', 'rough_terrain'].includes(normalizedCategory);
+  const isArticulada = normalizedCategory === 'Gruas Articuladas';
+  const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(normalizedCategory);
   
-  // Variable Maestra: Determina si se deben mostrar los filtros propios de vehículos de carretera o capacidad
   const showTruckFilters = props.categoryValue === 'ALL' || isPureTruck || isGrua || isBomba;
 
-  // Lógica inteligente para mostrar Estados basados en los Países seleccionados
   const availableStates = useMemo(() => {
     let states: string[] = [];
     if (props.selectedCountries.length === 0 || props.selectedCountries.includes('USA')) {
@@ -172,7 +172,6 @@ export default function Filters(props: any) {
           </div>
         </div>
 
-        {/* FILTRO CONDICIONAL: CAPACIDAD */}
         {showTruckFilters && (
           <div className="space-y-2 animate-fade-in">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Capacidad (Toneladas/Yardas/Metros)</label>
@@ -199,7 +198,6 @@ export default function Filters(props: any) {
           </div>
         </div>
 
-        {/* FILTRO CONDICIONAL: MILLAS */}
         {showTruckFilters && (
           <div className="space-y-2 animate-fade-in">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Millas</label>
@@ -210,7 +208,6 @@ export default function Filters(props: any) {
           </div>
         )}
 
-        {/* SECCIÓN CONDICIONAL: MOTOR Y TRANSMISIÓN */}
         {showTruckFilters && (
           <>
             <hr className="border-slate-100" />
@@ -311,8 +308,36 @@ export default function Filters(props: any) {
           </div>
         )}
 
-        {/* MÓDULO EXCLUSIVO PARA PIPAS Y VOLTEOS (AHORA CON MODALES) */}
-        {(props.categoryValue === 'Camiones Pipa' || props.categoryValue === 'Camiones Volteo') && (
+        {/* MÓDULO EXCLUSIVO PARA ROUGH & ALL TERRAIN */}
+        {normalizedCategory === 'rough_terrain' && (
+          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
+             <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                Especificaciones de Grúa Terreno
+             </label>
+             
+             {/* Ocultamos el subfiltro si el usuario ya escogió explícitamente la categoría desde el menú principal */}
+             {props.categoryValue !== 'Rough Terrain' && props.categoryValue !== 'All Terrain' && (
+               <div className="space-y-1">
+                 <select value={props.reqSubtipoGruaTerreno} onChange={e => props.onReqSubtipoGruaTerrenoChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-slate-500 outline-none text-slate-700">
+                   <option value="ALL">Todas (RT & AT)</option>
+                   <option value="ROUGH TERRAIN">Rough Terrain (Llantas grandes)</option>
+                   <option value="ALL TERRAIN">All Terrain (Multieje)</option>
+                 </select>
+               </div>
+             )}
+             
+             <div className="space-y-1 pt-2">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Largo de Pluma (Pies / FT)</label>
+               <div className="flex gap-2">
+                 <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
+                 <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
+               </div>
+             </div>
+          </div>
+        )}
+
+        {/* MÓDULO EXCLUSIVO PARA PIPAS Y VOLTEOS */}
+        {(normalizedCategory === 'Camiones Pipa' || normalizedCategory === 'Camiones Volteo') && (
           <div className="space-y-3 bg-cyan-50 p-4 rounded-xl border border-cyan-100 animate-fade-in mt-4">
              <label className="text-[11px] font-black text-cyan-800 uppercase tracking-wider flex items-center gap-2">
                 Especificaciones de Chasis
@@ -323,7 +348,7 @@ export default function Filters(props: any) {
         )}
 
         {/* MÓDULO EXCLUSIVO PARA MOTONIVELADORAS */}
-        {props.categoryValue === 'Motoconformadoras' && (
+        {normalizedCategory === 'Motoconformadoras' && (
           <>
             <hr className="border-slate-100" />
             <div className="space-y-2 animate-fade-in">
@@ -335,6 +360,43 @@ export default function Filters(props: any) {
               </select>
             </div>
           </>
+        )}
+
+        {/* MÓDULO EXCLUSIVO PARA ELEVADORES */}
+        {normalizedCategory === 'Elevadores' && (
+          <div className="space-y-3 bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in mt-4">
+             <label className="text-[11px] font-black text-purple-800 uppercase tracking-wider flex items-center gap-2">
+                Especificaciones de Elevación
+             </label>
+             <div className="grid grid-cols-2 gap-3">
+               <div className="space-y-1">
+                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tipo de Equipo</label>
+                 <select value={props.reqSubtipoElevador} onChange={e => props.onReqSubtipoElevadorChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700">
+                   <option value="ALL">Todos</option>
+                   <option value="ARTICULADO">Articulado (Boom)</option>
+                   <option value="TELESCOPICO">Telescópico (Straight)</option>
+                   <option value="TIJERA">Tijera (Scissor)</option>
+                 </select>
+               </div>
+               <div className="space-y-1">
+                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Combustible</label>
+                 <select value={props.reqCombustible} onChange={e => props.onReqCombustibleChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700">
+                   <option value="ALL">Cualquiera</option>
+                   <option value="DIÉSEL">Diésel</option>
+                   <option value="ELÉCTRICO">Eléctrico</option>
+                   <option value="DUAL">Dual / Híbrido</option>
+                   <option value="GAS">Gas / Propano</option>
+                 </select>
+               </div>
+             </div>
+             <div className="space-y-1 pt-2">
+               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Alcance (Pies / FT)</label>
+               <div className="flex gap-2">
+                 <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none" />
+                 <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none" />
+               </div>
+             </div>
+          </div>
         )}
 
       </aside>
@@ -360,8 +422,6 @@ export default function Filters(props: any) {
           isOpen={activeModal === 'MOTOR'} onClose={() => setActiveModal(null)} 
           title="Seleccionar Motores" options={props.availableEngines} selected={props.selectedEngines} onApply={props.onSelectedEnginesChange} 
       />
-      
-      {/* NUEVOS MODALES DE CHASIS */}
       <MultiSelectModal 
           isOpen={activeModal === 'TRACCION'} onClose={() => setActiveModal(null)} 
           title="Seleccionar Tracción" options={props.availableTracciones} selected={props.selectedTracciones} onApply={props.onSelectedTraccionesChange} 
