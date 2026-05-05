@@ -68,7 +68,6 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [req4x4, setReq4x4] = useState('ALL');
   const [reqClam, setReqClam] = useState('ALL');
   const [reqRipper, setReqRipper] = useState('ALL');
-  const [reqSubtipoGruaTerreno, setReqSubtipoGruaTerreno] = useState('ALL');
   
   const [selectedTracciones, setSelectedTracciones] = useState<string[]>([]);
   const [selectedEjes, setSelectedEjes] = useState<string[]>([]);
@@ -123,7 +122,6 @@ export const useMachineFilters = (machines: Machine[]) => {
     setReqCabin('ALL'); setReqHammer('ALL'); setReqExtension('ALL'); setReq4x4('ALL'); setReqClam('ALL');
     setReqRipper('ALL'); setSelectedTracciones([]); setSelectedEjes([]);
     setReqSubtipoElevador('ALL'); setReqCombustible('ALL'); setMinAlcanceValue(''); setMaxAlcanceValue('');
-    setReqSubtipoGruaTerreno('ALL');
   };
 
   const filteredMachines = useMemo(() => {
@@ -145,7 +143,6 @@ export const useMachineFilters = (machines: Machine[]) => {
           if (!generalText.includes(term)) return false;
       }
       
-      // MAGIA AQUÍ: Traductor de categorías para conectar el Frontend con Firebase
       const normalizedCategory = (categoryValue === 'Rough Terrain' || categoryValue === 'All Terrain') ? 'rough_terrain' : categoryValue;
 
       if (normalizedCategory !== 'ALL' && m.categoria_tarea !== normalizedCategory) return false;
@@ -267,18 +264,16 @@ export const useMachineFilters = (machines: Machine[]) => {
           }
       }
       
-      // --- FILTRO INTELIGENTE DE GRÚAS TERRENO ---
+      // --- FILTRO INTELIGENTE DE GRÚAS TERRENO (SIMPLIFICADO) ---
       if (normalizedCategory === 'rough_terrain') {
-          let requiredSubtype = reqSubtipoGruaTerreno;
-          
-          // Si seleccionaste la grúa específica desde tu menú principal, forzamos el subtipo internamente
-          if (categoryValue === 'Rough Terrain') requiredSubtype = 'ROUGH TERRAIN';
-          if (categoryValue === 'All Terrain') requiredSubtype = 'ALL TERRAIN';
-
-          if (requiredSubtype !== 'ALL') {
+          if (categoryValue === 'Rough Terrain') {
               const subtipoBD = (mDynamic.subtipo_grua_terreno || m.origen_tarea || "").toUpperCase();
-              if (!subtipoBD.includes(requiredSubtype)) return false;
+              if (!subtipoBD.includes('ROUGH TERRAIN')) return false;
+          } else if (categoryValue === 'All Terrain') {
+              const subtipoBD = (mDynamic.subtipo_grua_terreno || m.origen_tarea || "").toUpperCase();
+              if (!subtipoBD.includes('ALL TERRAIN')) return false;
           }
+
           if (minAlcanceValue || maxAlcanceValue) {
               const alcance = mDynamic.alcance || 0;
               const minA = minAlcanceValue ? parseInt(minAlcanceValue) : 0;
@@ -334,7 +329,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     maxMilesValue, minCapacityValue, maxCapacityValue, transmissionValue, sortValue, 
     boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer, 
     reqExtension, req4x4, reqClam, selectedTracciones, selectedEjes, reqRipper, 
-    reqSubtipoElevador, reqCombustible, minAlcanceValue, maxAlcanceValue, reqSubtipoGruaTerreno
+    reqSubtipoElevador, reqCombustible, minAlcanceValue, maxAlcanceValue
   ]);
 
   return {
@@ -372,7 +367,6 @@ export const useMachineFilters = (machines: Machine[]) => {
     reqSubtipoElevador, onReqSubtipoElevadorChange: setReqSubtipoElevador,
     reqCombustible, onReqCombustibleChange: setReqCombustible,
     minAlcanceValue, onMinAlcanceChange: setMinAlcanceValue,
-    maxAlcanceValue, onMaxAlcanceChange: setMaxAlcanceValue,
-    reqSubtipoGruaTerreno, onReqSubtipoGruaTerrenoChange: setReqSubtipoGruaTerreno
+    maxAlcanceValue, onMaxAlcanceChange: setMaxAlcanceValue
   };
 };

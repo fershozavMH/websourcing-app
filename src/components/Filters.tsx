@@ -65,8 +65,6 @@ const MultiSelectModal = ({
 export default function Filters(props: any) {
   const [activeModal, setActiveModal] = useState<'PAIS' | 'ESTADO' | 'MARCA' | 'MODELO' | 'MOTOR' | 'TRACCION' | 'EJES' | null>(null);
 
-  // --- VARIABLES CONDICIONALES PARA MOSTRAR/OCULTAR FILTROS ---
-  // Utilizamos la variable traducida para gobernar qué filtros visuales encender
   const normalizedCategory = ['Rough Terrain', 'All Terrain'].includes(props.categoryValue) ? 'rough_terrain' : props.categoryValue;
 
   const isBomba = normalizedCategory === 'Bombas';
@@ -140,7 +138,8 @@ export default function Filters(props: any) {
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</label>
           <select value={props.categoryValue} onChange={(e) => props.onCategoryChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none font-medium">
             <option value="ALL">Todas las máquinas</option>
-            {props.categories?.map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
+            {/* MAGIA AQUÍ: Ocultamos rough_terrain del dropdown */}
+            {props.categories?.filter((cat: string) => cat !== 'rough_terrain').map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </div>
 
@@ -224,10 +223,6 @@ export default function Filters(props: any) {
           </>
         )}
 
-        {/* =========================================================
-            BLOQUES CONDICIONALES DE EQUIPO ESPECIALIZADO 
-            ========================================================= */}
-
         {isBomba && (
           <div className="space-y-3 bg-blue-50 p-4 rounded-xl border border-blue-100 animate-fade-in mt-4">
             <label className="text-[11px] font-black text-blue-800 uppercase tracking-wider flex items-center gap-2">
@@ -308,24 +303,12 @@ export default function Filters(props: any) {
           </div>
         )}
 
-        {/* MÓDULO EXCLUSIVO PARA ROUGH & ALL TERRAIN */}
+        {/* MÓDULO EXCLUSIVO PARA ROUGH & ALL TERRAIN (SOLO PLUMA) */}
         {normalizedCategory === 'rough_terrain' && (
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
              <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 Especificaciones de Grúa Terreno
              </label>
-             
-             {/* Ocultamos el subfiltro si el usuario ya escogió explícitamente la categoría desde el menú principal */}
-             {props.categoryValue !== 'Rough Terrain' && props.categoryValue !== 'All Terrain' && (
-               <div className="space-y-1">
-                 <select value={props.reqSubtipoGruaTerreno} onChange={e => props.onReqSubtipoGruaTerrenoChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-slate-500 outline-none text-slate-700">
-                   <option value="ALL">Todas (RT & AT)</option>
-                   <option value="ROUGH TERRAIN">Rough Terrain (Llantas grandes)</option>
-                   <option value="ALL TERRAIN">All Terrain (Multieje)</option>
-                 </select>
-               </div>
-             )}
-             
              <div className="space-y-1 pt-2">
                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Largo de Pluma (Pies / FT)</label>
                <div className="flex gap-2">
