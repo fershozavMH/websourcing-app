@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import type { SortOption } from '@/types';
 
-// CONSTANTES PARA EL MODAL
 const USA_STATES = [
   "WEST - Western USA", "EAST - Eastern USA", "CENTRAL - Central USA", "SOUTH - Southern USA", "NORTH - Northern USA",
   "AL - Alabama", "AK - Alaska", "AZ - Arizona", "AR - Arkansas", "CA - California", "CO - Colorado", "CT - Connecticut", "DE - Delaware", "FL - Florida", "GA - Georgia", "HI - Hawaii", "ID - Idaho", "IL - Illinois", "IN - Indiana", "IA - Iowa", "KS - Kansas", "KY - Kentucky", "LA - Louisiana", "ME - Maine", "MD - Maryland", "MA - Massachusetts", "MI - Michigan", "MN - Minnesota", "MS - Mississippi", "MO - Missouri", "MT - Montana", "NE - Nebraska", "NV - Nevada", "NH - New Hampshire", "NJ - New Jersey", "NM - New Mexico", "NY - New York", "NC - North Carolina", "ND - North Dakota", "OH - Ohio", "OK - Oklahoma", "OR - Oregon", "PA - Pennsylvania", "RI - Rhode Island", "SC - South Carolina", "SD - South Dakota", "TN - Tennessee", "TX - Texas", "UT - Utah", "VT - Vermont", "VA - Virginia", "WA - Washington", "WV - West Virginia", "WI - Wisconsin", "WY - Wyoming"
@@ -10,56 +9,83 @@ const CAN_PROVINCES = [
   "AB - Alberta", "BC - British Columbia", "MB - Manitoba", "NB - New Brunswick", "NL - Newfoundland and Labrador", "NS - Nova Scotia", "ON - Ontario", "PE - Prince Edward Island", "QC - Quebec", "SK - Saskatchewan"
 ];
 
-const MultiSelectModal = ({ 
-    isOpen, onClose, title, options, selected, onApply 
-}: { 
-    isOpen: boolean, onClose: () => void, title: string, options: string[], selected: string[], onApply: (arr: string[]) => void 
+const MultiSelectModal = ({
+  isOpen, onClose, title, options, selected, onApply
+}: {
+  isOpen: boolean, onClose: () => void, title: string, options: string[], selected: string[], onApply: (arr: string[]) => void
 }) => {
-    const [temp, setTemp] = useState<string[]>([]);
-    
-    React.useEffect(() => { 
-        if (isOpen) setTemp(selected); 
-    }, [isOpen, selected]);
+  const [temp, setTemp] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
 
-    if (!isOpen) return null;
+  React.useEffect(() => {
+    if (isOpen) { setTemp(selected); setSearch(''); }
+  }, [isOpen, selected]);
 
-    return (
-       <div 
-         className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
-         onClick={onClose} 
-       >
-         <div 
-           className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[85vh] animate-fade-in"
-           onClick={(e) => e.stopPropagation()} 
-         >
-           <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-             <h4 className="font-black text-slate-800">{title}</h4>
-             <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
-               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-             </button>
-           </div>
-           <div className="p-4 overflow-y-auto flex-1 space-y-2">
-             {options.length === 0 && <p className="text-sm text-slate-500 italic text-center py-4">No hay opciones disponibles en esta búsqueda.</p>}
-             {options.map(opt => (
-               <label key={opt} className="flex items-center gap-3 p-3 hover:bg-orange-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-orange-100">
-                 <input 
-                    type="checkbox" 
-                    checked={temp.includes(opt)} 
-                    onChange={() => temp.includes(opt) ? setTemp(temp.filter(o => o !== opt)) : setTemp([...temp, opt])} 
-                    className="w-5 h-5 rounded text-orange-500 focus:ring-orange-500 border-slate-300 cursor-pointer" 
-                 />
-                 <span className="text-sm font-semibold text-slate-700">{opt}</span>
-               </label>
-             ))}
-           </div>
-           <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
-             <button onClick={() => { onApply(temp); onClose(); }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors shadow-md shadow-orange-500/20">
-               Aplicar Filtros ({temp.length})
-             </button>
-           </div>
-         </div>
-       </div>
-    );
+  if (!isOpen) return null;
+
+  const filtered = search.trim()
+    ? options.filter(o => o.toLowerCase().includes(search.toLowerCase()))
+    : options;
+
+  return (
+    <div
+      className="fixed inset-0 z-100 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col max-h-[85vh] animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-4 border-b border-slate-100 flex justify-between items-center">
+          <h4 className="font-black text-slate-800">{title}</h4>
+          <button onClick={onClose} aria-label="Cerrar modal" className="text-slate-400 hover:text-slate-600 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        {options.length > 6 && (
+          <div className="px-4 pt-3 pb-1">
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
+              autoFocus
+            />
+          </div>
+        )}
+
+        <div className="p-4 overflow-y-auto flex-1 space-y-2">
+          {filtered.length === 0 && (
+            <p className="text-sm text-slate-500 italic text-center py-4">
+              {search ? `Sin resultados para "${search}"` : 'No hay opciones disponibles en esta búsqueda.'}
+            </p>
+          )}
+          {filtered.map(opt => (
+            <label key={opt} className="flex items-center gap-3 p-3 hover:bg-orange-50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-orange-100">
+              <input
+                type="checkbox"
+                checked={temp.includes(opt)}
+                onChange={() => temp.includes(opt) ? setTemp(temp.filter(o => o !== opt)) : setTemp([...temp, opt])}
+                className="w-5 h-5 rounded text-orange-500 focus:ring-orange-500 border-slate-300 cursor-pointer"
+              />
+              <span className="text-sm font-semibold text-slate-700">{opt}</span>
+            </label>
+          ))}
+        </div>
+
+        <div className="p-4 border-t border-slate-100 bg-slate-50 rounded-b-2xl">
+          <button onClick={() => { onApply(temp); onClose(); }} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl transition-colors shadow-md shadow-orange-500/20">
+            Aplicar ({temp.length} seleccionado{temp.length !== 1 ? 's' : ''})
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default function Filters(props: any) {
@@ -72,38 +98,66 @@ export default function Filters(props: any) {
   const isGrua = ['Gruas Titanes', 'Gruas Articuladas', 'rough_terrain'].includes(normalizedCategory);
   const isArticulada = normalizedCategory === 'Gruas Articuladas';
   const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(normalizedCategory);
-  
   const showTruckFilters = props.categoryValue === 'ALL' || isPureTruck || isGrua || isBomba;
 
   const availableStates = useMemo(() => {
     let states: string[] = [];
-    if (props.selectedCountries.length === 0 || props.selectedCountries.includes('USA')) {
-      states = [...states, ...USA_STATES];
-    }
-    if (props.selectedCountries.length === 0 || props.selectedCountries.includes('Canadá')) {
-      states = [...states, ...CAN_PROVINCES];
-    }
+    if (props.selectedCountries.length === 0 || props.selectedCountries.includes('USA')) states = [...states, ...USA_STATES];
+    if (props.selectedCountries.length === 0 || props.selectedCountries.includes('Canadá')) states = [...states, ...CAN_PROVINCES];
     return states;
   }, [props.selectedCountries]);
+
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (props.searchValue) count++;
+    if (props.selectedCountries?.length > 0) count++;
+    if (props.selectedStates?.length > 0) count++;
+    if (props.selectedBrands?.length > 0) count++;
+    if (props.selectedModels?.length > 0) count++;
+    if (props.selectedEngines?.length > 0) count++;
+    if (props.selectedTracciones?.length > 0) count++;
+    if (props.selectedEjes?.length > 0) count++;
+    if (props.minYearValue || props.maxYearValue) count++;
+    if (props.minPriceValue || props.maxPriceValue) count++;
+    if (props.minHoursValue || props.maxHoursValue) count++;
+    if (props.minMilesValue || props.maxMilesValue) count++;
+    if (props.minCapacityValue || props.maxCapacityValue) count++;
+    if (props.minAlcanceValue || props.maxAlcanceValue) count++;
+    if (props.boomTypeValue && props.boomTypeValue !== 'ALL') count++;
+    if (props.boomBrandValue) count++;
+    if (props.req4x4 && props.req4x4 !== 'ALL') count++;
+    if (props.reqCabin && props.reqCabin !== 'ALL') count++;
+    if (props.reqExtension && props.reqExtension !== 'ALL') count++;
+    if (props.reqHammer && props.reqHammer !== 'ALL') count++;
+    if (props.reqClam && props.reqClam !== 'ALL') count++;
+    if (props.craneMountStatus && props.craneMountStatus !== 'ALL') count++;
+    if (props.reqRipper && props.reqRipper !== 'ALL') count++;
+    if (props.reqSubtipoElevador && props.reqSubtipoElevador !== 'ALL') count++;
+    if (props.reqCombustible && props.reqCombustible !== 'ALL') count++;
+    if (props.transmissionValue && props.transmissionValue !== 'ALL') count++;
+    return count;
+  }, [props]);
 
   const renderMultiSelectTrigger = (title: string, modalId: any, selectedArr: string[], onRemove: (val: string) => void) => (
     <div className="space-y-2 animate-fade-in">
       <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">{title}</label>
-      <button 
+      <button
         onClick={() => setActiveModal(modalId)}
         className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-left hover:border-orange-400 focus:ring-2 focus:ring-orange-500 outline-none transition-all flex justify-between items-center shadow-sm"
       >
-        <span className="text-slate-600 font-medium">Seleccionar opciones...</span>
-        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        <span className="text-slate-600 font-medium">
+          {selectedArr.length > 0 ? `${selectedArr.length} seleccionado${selectedArr.length !== 1 ? 's' : ''}` : 'Seleccionar opciones...'}
+        </span>
+        <svg className="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
       </button>
-      
+
       {selectedArr.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
           {selectedArr.map(item => (
             <span key={item} className="bg-orange-100 text-orange-800 text-[11px] pl-2.5 pr-1 py-1 rounded-md flex items-center gap-1.5 font-bold border border-orange-200">
-              {item.split(' - ')[0]} 
-              <button onClick={() => onRemove(item)} className="hover:bg-orange-200 rounded-full p-1 transition-colors text-orange-600">
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              {item.split(' - ')[0]}
+              <button onClick={() => onRemove(item)} aria-label={`Quitar ${item}`} className="hover:bg-orange-200 rounded-full p-1 transition-colors text-orange-600">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </span>
           ))}
@@ -115,37 +169,43 @@ export default function Filters(props: any) {
   return (
     <>
       <aside className="w-full bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-6">
-        
+
         <div className="flex justify-between items-center border-b border-slate-100 pb-3">
           <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+            <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
             Filtros
+            {activeFiltersCount > 0 && (
+              <span className="bg-orange-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center leading-none">
+                {activeFiltersCount}
+              </span>
+            )}
           </h3>
           <div className="flex items-center gap-3">
-            <button onClick={props.onClearAll} className="text-[10px] font-bold text-slate-400 hover:text-orange-600 uppercase tracking-wider transition-colors underline decoration-dotted underline-offset-2">Limpiar Todo</button>
-            <button onClick={props.onRefresh} disabled={props.isRefreshing} className="text-slate-400 hover:text-orange-500 transition-colors">
-               <svg className={`w-5 h-5 ${props.isRefreshing ? 'animate-spin text-orange-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <button onClick={props.onClearAll} className="text-[10px] font-bold text-slate-400 hover:text-orange-600 uppercase tracking-wider transition-colors underline decoration-dotted underline-offset-2">
+              Limpiar Todo
+            </button>
+            <button onClick={props.onRefresh} disabled={props.isRefreshing} aria-label="Actualizar resultados" className="text-slate-400 hover:text-orange-500 transition-colors">
+              <svg className={`w-5 h-5 ${props.isRefreshing ? 'animate-spin text-orange-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
             </button>
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Palabra Clave</label>
-          <input type="text" placeholder="Ingresar texto..." value={props.searchValue} onChange={(e) => props.onSearchChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+          <label htmlFor="filter-keyword" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Palabra Clave</label>
+          <input id="filter-keyword" type="text" placeholder="Ingresar texto..." value={props.searchValue} onChange={(e) => props.onSearchChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</label>
-          <select value={props.categoryValue} onChange={(e) => props.onCategoryChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none font-medium">
+          <label htmlFor="filter-category" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Categoría</label>
+          <select id="filter-category" value={props.categoryValue} onChange={(e) => props.onCategoryChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none font-medium">
             <option value="ALL">Todas las máquinas</option>
-            {/* MAGIA AQUÍ: Ocultamos rough_terrain del dropdown */}
             {props.categories?.filter((cat: string) => cat !== 'rough_terrain').map((cat: string) => <option key={cat} value={cat}>{cat}</option>)}
           </select>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ordenar Por</label>
-          <select value={props.sortValue} onChange={(e) => props.onSortChange(e.target.value as SortOption)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
+          <label htmlFor="filter-sort" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ordenar Por</label>
+          <select id="filter-sort" value={props.sortValue} onChange={(e) => props.onSortChange(e.target.value as SortOption)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
             <option value="recent">Más Recientes</option>
             <option value="price_asc">Precio: Menor a Mayor</option>
             <option value="price_desc">Precio: Mayor a Menor</option>
@@ -157,7 +217,6 @@ export default function Filters(props: any) {
 
         {renderMultiSelectTrigger("País de Ubicación", "PAIS", props.selectedCountries, (val) => props.onSelectedCountriesChange(props.selectedCountries.filter((c: string) => c !== val)))}
         {renderMultiSelectTrigger("Estados / Región", "ESTADO", props.selectedStates, (val) => props.onSelectedStatesChange(props.selectedStates.filter((s: string) => s !== val)))}
-        
         {renderMultiSelectTrigger("Marca", "MARCA", props.selectedBrands, (val) => props.onSelectedBrandsChange(props.selectedBrands.filter((b: string) => b !== val)))}
         {renderMultiSelectTrigger("Modelo", "MODELO", props.selectedModels, (val) => props.onSelectedModelsChange(props.selectedModels.filter((m: string) => m !== val)))}
 
@@ -166,8 +225,8 @@ export default function Filters(props: any) {
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Año</label>
           <div className="flex gap-2">
-            <input type="number" placeholder="Min" value={props.minYearValue} onChange={(e) => props.onMinYearChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-            <input type="number" placeholder="Max" value={props.maxYearValue} onChange={(e) => props.onMaxYearChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Min" value={props.minYearValue} onChange={(e) => props.onMinYearChange(e.target.value)} aria-label="Año mínimo" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Max" value={props.maxYearValue} onChange={(e) => props.onMaxYearChange(e.target.value)} aria-label="Año máximo" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
         </div>
 
@@ -175,8 +234,8 @@ export default function Filters(props: any) {
           <div className="space-y-2 animate-fade-in">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Capacidad (Toneladas/Yardas/Metros)</label>
             <div className="flex gap-2">
-              <input type="number" placeholder="Min" value={props.minCapacityValue} onChange={(e) => props.onMinCapacityChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-              <input type="number" placeholder="Max" value={props.maxCapacityValue} onChange={(e) => props.onMaxCapacityChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+              <input type="number" placeholder="Min" value={props.minCapacityValue} onChange={(e) => props.onMinCapacityChange(e.target.value)} aria-label="Capacidad mínima" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+              <input type="number" placeholder="Max" value={props.maxCapacityValue} onChange={(e) => props.onMaxCapacityChange(e.target.value)} aria-label="Capacidad máxima" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
             </div>
           </div>
         )}
@@ -184,16 +243,16 @@ export default function Filters(props: any) {
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Precio (USD)</label>
           <div className="flex gap-2">
-            <input type="number" placeholder="Min" value={props.minPriceValue} onChange={(e) => props.onMinPriceChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-            <input type="number" placeholder="Max" value={props.maxPriceValue} onChange={(e) => props.onMaxPriceChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Min" value={props.minPriceValue} onChange={(e) => props.onMinPriceChange(e.target.value)} aria-label="Precio mínimo" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Max" value={props.maxPriceValue} onChange={(e) => props.onMaxPriceChange(e.target.value)} aria-label="Precio máximo" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
         </div>
 
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Horas de Máquina</label>
           <div className="flex gap-2">
-            <input type="number" placeholder="Min" value={props.minHoursValue} onChange={(e) => props.onMinHoursChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-            <input type="number" placeholder="Max" value={props.maxHoursValue} onChange={(e) => props.onMaxHoursChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Min" value={props.minHoursValue} onChange={(e) => props.onMinHoursChange(e.target.value)} aria-label="Horas mínimas" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+            <input type="number" placeholder="Max" value={props.maxHoursValue} onChange={(e) => props.onMaxHoursChange(e.target.value)} aria-label="Horas máximas" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
         </div>
 
@@ -201,8 +260,8 @@ export default function Filters(props: any) {
           <div className="space-y-2 animate-fade-in">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Millas</label>
             <div className="flex gap-2">
-              <input type="number" placeholder="Min" value={props.minMilesValue} onChange={(e) => props.onMinMilesChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
-              <input type="number" placeholder="Max" value={props.maxMilesValue} onChange={(e) => props.onMaxMilesChange(e.target.value)} className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+              <input type="number" placeholder="Min" value={props.minMilesValue} onChange={(e) => props.onMinMilesChange(e.target.value)} aria-label="Millas mínimas" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
+              <input type="number" placeholder="Max" value={props.maxMilesValue} onChange={(e) => props.onMaxMilesChange(e.target.value)} aria-label="Millas máximas" className="w-1/2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none" />
             </div>
           </div>
         )}
@@ -211,10 +270,9 @@ export default function Filters(props: any) {
           <>
             <hr className="border-slate-100" />
             {renderMultiSelectTrigger("Motor", "MOTOR", props.selectedEngines, (val) => props.onSelectedEnginesChange(props.selectedEngines.filter((e: string) => e !== val)))}
-
             <div className="space-y-2 animate-fade-in">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Transmisión</label>
-              <select value={props.transmissionValue} onChange={(e) => props.onTransmissionChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
+              <label htmlFor="filter-transmission" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Transmisión</label>
+              <select id="filter-transmission" value={props.transmissionValue} onChange={(e) => props.onTransmissionChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none">
                 <option value="ALL">Cualquiera</option>
                 <option value="ESTANDAR">Estándar / Manual</option>
                 <option value="AUTOMATICA">Automática / Allison</option>
@@ -226,20 +284,20 @@ export default function Filters(props: any) {
         {isBomba && (
           <div className="space-y-3 bg-blue-50 p-4 rounded-xl border border-blue-100 animate-fade-in mt-4">
             <label className="text-[11px] font-black text-blue-800 uppercase tracking-wider flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-                Configuración de Pluma
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+              Configuración de Pluma
             </label>
             <div className="space-y-2">
-              <label className="text-[9px] font-bold text-blue-700 uppercase">Tipo de Doblez</label>
-              <select value={props.boomTypeValue} onChange={e => props.onBoomTypeValueChange(e.target.value)} className="w-full bg-white border border-blue-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none text-slate-700">
+              <label htmlFor="filter-boom-type" className="text-[9px] font-bold text-blue-700 uppercase">Tipo de Doblez</label>
+              <select id="filter-boom-type" value={props.boomTypeValue} onChange={e => props.onBoomTypeValueChange(e.target.value)} className="w-full bg-white border border-blue-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none text-slate-700">
                 <option value="ALL">Cualquiera</option>
                 <option value="Z">Z</option>
                 <option value="R/F">R&F</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label className="text-[9px] font-bold text-blue-700 uppercase">Marca de Pluma</label>
-              <input type="text" placeholder="Ej. Putzmeister, Schwing..." value={props.boomBrandValue} onChange={(e) => props.onBoomBrandChange(e.target.value)} className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
+              <label htmlFor="filter-boom-brand" className="text-[9px] font-bold text-blue-700 uppercase">Marca de Pluma</label>
+              <input id="filter-boom-brand" type="text" placeholder="Ej. Putzmeister, Schwing..." value={props.boomBrandValue} onChange={(e) => props.onBoomBrandChange(e.target.value)} className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
         )}
@@ -247,37 +305,37 @@ export default function Filters(props: any) {
         {isRetro && (
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
             <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                Especificaciones Adicionales
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+              Especificaciones Adicionales
             </label>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tracción</label>
-                <select value={props.req4x4} onChange={e => props.onReq4x4Change(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                <label htmlFor="filter-4x4" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tracción</label>
+                <select id="filter-4x4" value={props.req4x4} onChange={e => props.onReq4x4Change(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                   <option value="ALL">Cualquiera</option><option value="4WD">4x4</option><option value="2WD">4x2</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cabina</label>
-                <select value={props.reqCabin} onChange={e => props.onReqCabinChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                <label htmlFor="filter-cabin" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cabina</label>
+                <select id="filter-cabin" value={props.reqCabin} onChange={e => props.onReqCabinChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                   <option value="ALL">Cualquiera</option><option value="CERRADA">Cerrada</option><option value="ABIERTA">Abierta</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Brazo Excavador</label>
-                <select value={props.reqExtension} onChange={e => props.onReqExtensionChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                <label htmlFor="filter-extension" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Brazo Excavador</label>
+                <select id="filter-extension" value={props.reqExtension} onChange={e => props.onReqExtensionChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                   <option value="ALL">Cualquier</option><option value="YES">Extensión</option><option value="NO">Estándar</option>
                 </select>
               </div>
               <div className="space-y-1">
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Kit de Martillo</label>
-                <select value={props.reqHammer} onChange={e => props.onReqHammerChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                <label htmlFor="filter-hammer" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Kit de Martillo</label>
+                <select id="filter-hammer" value={props.reqHammer} onChange={e => props.onReqHammerChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                   <option value="ALL">Cualquiera</option><option value="YES">Con Kit</option><option value="NO">Sin Kit</option>
                 </select>
               </div>
               <div className="space-y-1 col-span-2">
-                <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cucharón Frontal</label>
-                <select value={props.reqClam} onChange={e => props.onReqClamChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
+                <label htmlFor="filter-clam" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Cucharón Frontal</label>
+                <select id="filter-clam" value={props.reqClam} onChange={e => props.onReqClamChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700">
                   <option value="ALL">Cualquiera</option><option value="YES">Bote Almeja (4-en-1)</option><option value="NO">Normal</option>
                 </select>
               </div>
@@ -290,53 +348,50 @@ export default function Filters(props: any) {
             <p className="text-xs font-black text-orange-800 uppercase tracking-wider mb-2">Especificaciones de Grúa</p>
             {isArticulada && (
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-orange-700 uppercase">Tipo de Montaje</label>
-                <select value={props.craneMountStatus} onChange={e => props.onCraneMountStatusChange(e.target.value)} className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500">
+                <label htmlFor="filter-crane-mount" className="text-[10px] font-bold text-orange-700 uppercase">Tipo de Montaje</label>
+                <select id="filter-crane-mount" value={props.craneMountStatus} onChange={e => props.onCraneMountStatusChange(e.target.value)} className="w-full bg-white border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500">
                   <option value="ALL">Cualquiera</option><option value="MONTADA">Montada en Camión</option><option value="DESMONTADA">Desmontada (Solo Grúa)</option>
                 </select>
               </div>
             )}
             <div className="space-y-2">
-              <label className="text-[10px] font-bold text-orange-700 uppercase">Marca de Pluma (Grúa)</label>
-              <input type="text" placeholder="Ej. National, Terex..." value={props.boomBrandValue} onChange={(e) => props.onBoomBrandChange(e.target.value)} className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
+              <label htmlFor="filter-crane-boom-brand" className="text-[10px] font-bold text-orange-700 uppercase">Marca de Pluma (Grúa)</label>
+              <input id="filter-crane-boom-brand" type="text" placeholder="Ej. National, Terex..." value={props.boomBrandValue} onChange={(e) => props.onBoomBrandChange(e.target.value)} className="w-full border border-orange-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500" />
             </div>
           </div>
         )}
 
-        {/* MÓDULO EXCLUSIVO PARA ROUGH & ALL TERRAIN (SOLO PLUMA) */}
         {normalizedCategory === 'rough_terrain' && (
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
-             <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                Especificaciones de Grúa Terreno
-             </label>
-             <div className="space-y-1 pt-2">
-               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Largo de Pluma (Pies / FT)</label>
-               <div className="flex gap-2">
-                 <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
-                 <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
-               </div>
-             </div>
+            <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              Especificaciones de Grúa Terreno
+            </label>
+            <div className="space-y-1 pt-2">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Largo de Pluma (Pies / FT)</label>
+              <div className="flex gap-2">
+                <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} aria-label="Alcance mínimo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
+                <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} aria-label="Alcance máximo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
+              </div>
+            </div>
           </div>
         )}
 
-        {/* MÓDULO EXCLUSIVO PARA PIPAS Y VOLTEOS */}
         {(normalizedCategory === 'Camiones Pipa' || normalizedCategory === 'Camiones Volteo') && (
           <div className="space-y-3 bg-cyan-50 p-4 rounded-xl border border-cyan-100 animate-fade-in mt-4">
-             <label className="text-[11px] font-black text-cyan-800 uppercase tracking-wider flex items-center gap-2">
-                Especificaciones de Chasis
-             </label>
-             {renderMultiSelectTrigger("Tracción", "TRACCION", props.selectedTracciones, (val) => props.onSelectedTraccionesChange(props.selectedTracciones.filter((t: string) => t !== val)))}
-             {renderMultiSelectTrigger("Ejes Traseros", "EJES", props.selectedEjes, (val) => props.onSelectedEjesChange(props.selectedEjes.filter((e: string) => e !== val)))}
+            <label className="text-[11px] font-black text-cyan-800 uppercase tracking-wider flex items-center gap-2">
+              Especificaciones de Chasis
+            </label>
+            {renderMultiSelectTrigger("Tracción", "TRACCION", props.selectedTracciones, (val) => props.onSelectedTraccionesChange(props.selectedTracciones.filter((t: string) => t !== val)))}
+            {renderMultiSelectTrigger("Ejes Traseros", "EJES", props.selectedEjes, (val) => props.onSelectedEjesChange(props.selectedEjes.filter((e: string) => e !== val)))}
           </div>
         )}
 
-        {/* MÓDULO EXCLUSIVO PARA MOTONIVELADORAS */}
         {normalizedCategory === 'Motoconformadoras' && (
           <>
             <hr className="border-slate-100" />
             <div className="space-y-2 animate-fade-in">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ripper / Escarificador</label>
-              <select value={props.reqRipper} onChange={e => props.onReqRipperChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none text-slate-700">
+              <label htmlFor="filter-ripper" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ripper / Escarificador</label>
+              <select id="filter-ripper" value={props.reqRipper} onChange={e => props.onReqRipperChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none text-slate-700">
                 <option value="ALL">Cualquiera</option>
                 <option value="YES">Con Ripper</option>
                 <option value="NO">Sin Ripper</option>
@@ -345,74 +400,51 @@ export default function Filters(props: any) {
           </>
         )}
 
-        {/* MÓDULO EXCLUSIVO PARA ELEVADORES */}
         {normalizedCategory === 'Elevadores' && (
           <div className="space-y-3 bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in mt-4">
-             <label className="text-[11px] font-black text-purple-800 uppercase tracking-wider flex items-center gap-2">
-                Especificaciones de Elevación
-             </label>
-             <div className="grid grid-cols-2 gap-3">
-               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tipo de Equipo</label>
-                 <select value={props.reqSubtipoElevador} onChange={e => props.onReqSubtipoElevadorChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700">
-                   <option value="ALL">Todos</option>
-                   <option value="ARTICULADO">Articulado (Boom)</option>
-                   <option value="TELESCOPICO">Telescópico (Straight)</option>
-                   <option value="TIJERA">Tijera (Scissor)</option>
-                 </select>
-               </div>
-               <div className="space-y-1">
-                 <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Combustible</label>
-                 <select value={props.reqCombustible} onChange={e => props.onReqCombustibleChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700">
-                   <option value="ALL">Cualquiera</option>
-                   <option value="DIÉSEL">Diésel</option>
-                   <option value="ELÉCTRICO">Eléctrico</option>
-                   <option value="DUAL">Dual / Híbrido</option>
-                   <option value="GAS">Gas / Propano</option>
-                 </select>
-               </div>
-             </div>
-             <div className="space-y-1 pt-2">
-               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Alcance (Pies / FT)</label>
-               <div className="flex gap-2">
-                 <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none" />
-                 <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none" />
-               </div>
-             </div>
+            <label className="text-[11px] font-black text-purple-800 uppercase tracking-wider flex items-center gap-2">
+              Especificaciones de Elevación
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label htmlFor="filter-subtipo-elevador" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tipo de Equipo</label>
+                <select id="filter-subtipo-elevador" value={props.reqSubtipoElevador} onChange={e => props.onReqSubtipoElevadorChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700">
+                  <option value="ALL">Todos</option>
+                  <option value="ARTICULADO">Articulado (Boom)</option>
+                  <option value="TELESCOPICO">Telescópico (Straight)</option>
+                  <option value="TIJERA">Tijera (Scissor)</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label htmlFor="filter-combustible" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Combustible</label>
+                <select id="filter-combustible" value={props.reqCombustible} onChange={e => props.onReqCombustibleChange(e.target.value)} className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700">
+                  <option value="ALL">Cualquiera</option>
+                  <option value="DIÉSEL">Diésel</option>
+                  <option value="ELÉCTRICO">Eléctrico</option>
+                  <option value="DUAL">Dual / Híbrido</option>
+                  <option value="GAS">Gas / Propano</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1 pt-2">
+              <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Alcance (Pies / FT)</label>
+              <div className="flex gap-2">
+                <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} aria-label="Alcance mínimo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none" />
+                <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} aria-label="Alcance máximo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none" />
+              </div>
+            </div>
           </div>
         )}
 
       </aside>
 
-      {/* RENDERIZADO DE MODALES GLOBALES */}
-      <MultiSelectModal 
-          isOpen={activeModal === 'PAIS'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Países" options={props.availableCountries} selected={props.selectedCountries} onApply={props.onSelectedCountriesChange} 
-      />
-      <MultiSelectModal 
-          isOpen={activeModal === 'ESTADO'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Estados" options={availableStates} selected={props.selectedStates} onApply={props.onSelectedStatesChange} 
-      />
-      <MultiSelectModal 
-          isOpen={activeModal === 'MARCA'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Marcas" options={props.availableBrands} selected={props.selectedBrands} onApply={props.onSelectedBrandsChange} 
-      />
-      <MultiSelectModal 
-          isOpen={activeModal === 'MODELO'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Modelos" options={props.availableModels} selected={props.selectedModels} onApply={props.onSelectedModelsChange} 
-      />
-      <MultiSelectModal 
-          isOpen={activeModal === 'MOTOR'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Motores" options={props.availableEngines} selected={props.selectedEngines} onApply={props.onSelectedEnginesChange} 
-      />
-      <MultiSelectModal 
-          isOpen={activeModal === 'TRACCION'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Tracción" options={props.availableTracciones} selected={props.selectedTracciones} onApply={props.onSelectedTraccionesChange} 
-      />
-      <MultiSelectModal 
-          isOpen={activeModal === 'EJES'} onClose={() => setActiveModal(null)} 
-          title="Seleccionar Ejes Traseros" options={props.availableEjes} selected={props.selectedEjes} onApply={props.onSelectedEjesChange} 
-      />
+      <MultiSelectModal isOpen={activeModal === 'PAIS'} onClose={() => setActiveModal(null)} title="Seleccionar Países" options={props.availableCountries} selected={props.selectedCountries} onApply={props.onSelectedCountriesChange} />
+      <MultiSelectModal isOpen={activeModal === 'ESTADO'} onClose={() => setActiveModal(null)} title="Seleccionar Estados" options={availableStates} selected={props.selectedStates} onApply={props.onSelectedStatesChange} />
+      <MultiSelectModal isOpen={activeModal === 'MARCA'} onClose={() => setActiveModal(null)} title="Seleccionar Marcas" options={props.availableBrands} selected={props.selectedBrands} onApply={props.onSelectedBrandsChange} />
+      <MultiSelectModal isOpen={activeModal === 'MODELO'} onClose={() => setActiveModal(null)} title="Seleccionar Modelos" options={props.availableModels} selected={props.selectedModels} onApply={props.onSelectedModelsChange} />
+      <MultiSelectModal isOpen={activeModal === 'MOTOR'} onClose={() => setActiveModal(null)} title="Seleccionar Motores" options={props.availableEngines} selected={props.selectedEngines} onApply={props.onSelectedEnginesChange} />
+      <MultiSelectModal isOpen={activeModal === 'TRACCION'} onClose={() => setActiveModal(null)} title="Seleccionar Tracción" options={props.availableTracciones} selected={props.selectedTracciones} onApply={props.onSelectedTraccionesChange} />
+      <MultiSelectModal isOpen={activeModal === 'EJES'} onClose={() => setActiveModal(null)} title="Seleccionar Ejes Traseros" options={props.availableEjes} selected={props.selectedEjes} onApply={props.onSelectedEjesChange} />
     </>
   );
 }

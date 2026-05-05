@@ -11,6 +11,36 @@ import { CATEGORIAS_INICIO } from '@/constants/categories';
 import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters } from '@/hooks/useMachineFilters';
 
+const ITEMS_PER_PAGE = 24;
+
+const SkeletonCard = () => (
+  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
+    <div className="h-52 bg-slate-200" />
+    <div className="p-4 space-y-3">
+      <div className="flex justify-between">
+        <div className="h-2.5 bg-slate-200 rounded w-1/3" />
+        <div className="h-2.5 bg-slate-200 rounded w-1/5" />
+      </div>
+      <div className="h-4 bg-slate-200 rounded w-full" />
+      <div className="h-4 bg-slate-200 rounded w-3/4" />
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="h-10 bg-slate-200 rounded" />
+        <div className="h-10 bg-slate-200 rounded" />
+        <div className="h-10 bg-slate-200 rounded" />
+        <div className="h-10 bg-slate-200 rounded" />
+      </div>
+      <div className="h-9 bg-slate-200 rounded mt-1" />
+    </div>
+  </div>
+);
+
+function getPaginationRange(currentPage: number, totalPages: number): (number | '...')[] {
+  if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  if (currentPage <= 4) return [1, 2, 3, 4, 5, '...', totalPages];
+  if (currentPage >= totalPages - 3) return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
+}
+
 function CatalogApp() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -21,16 +51,11 @@ function CatalogApp() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 24;
-
-  // Estado del Tab de Origen de Datos (Movido aquí para mejor arquitectura)
   const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>('AGENCIAS');
 
   const { machines, setMachines, loading, lastUpdate, fetchInitialData } = useMachines();
   const filters = useMachineFilters(machines);
 
-  // --- FILTRADO MAESTRO ---
-  // Aplica el filtro de la página sobre las máquinas que ya filtró el "cerebro" técnico
   const finalMachines = useMemo(() => {
     return filters.filteredMachines.filter(m => {
       if (dataSource === 'FACEBOOK' && m.pagina !== 'Facebook Marketplace') return false;
@@ -52,7 +77,6 @@ function CatalogApp() {
     return () => unsubscribe();
   }, [router]);
 
-  // Si el usuario cambia cualquier filtro o tab, regresamos a la página 1
   useEffect(() => {
     setCurrentPage(1);
   }, [finalMachines]);
@@ -70,7 +94,7 @@ function CatalogApp() {
   const handleLogout = async () => { await signOut(auth); router.push('/login'); };
 
   const handleSelectCategory = (catId: string) => {
-    filters.resetAllFilters(); // Limpiamos todos los modales y rangos al cambiar de categoría
+    filters.resetAllFilters();
     router.push(`/?cat=${encodeURIComponent(catId)}`);
   };
 
@@ -84,10 +108,9 @@ function CatalogApp() {
     return [...new Set([...baseCats, ...loadedCats])].sort();
   }, [machines]);
 
-  // --- CÁLCULOS PRECISOS DE PAGINACIÓN ---
-  const totalPages = Math.ceil(finalMachines.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const totalPages = Math.ceil(finalMachines.length / ITEMS_PER_PAGE);
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
   const currentItems = finalMachines.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (pageNumber: number) => {
@@ -95,7 +118,11 @@ function CatalogApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  if (authChecking) return <div className="min-h-screen bg-slate-900 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div></div>;
+  if (authChecking) return (
+    <div className="min-h-screen bg-slate-900 flex justify-center items-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+    </div>
+  );
   if (!isAuthenticated) return null;
 
   return (
@@ -112,7 +139,7 @@ function CatalogApp() {
               <span className="text-slate-300 font-medium hidden md:inline text-sm">Resultados:</span>
               <span className="text-orange-400 font-bold text-lg">
                 {finalMachines.length > 0
-                  ? `${indexOfFirstItem + 1} - ${Math.min(indexOfLastItem, finalMachines.length)} de ${finalMachines.length}`
+                  ? `${indexOfFirstItem + 1}–${Math.min(indexOfLastItem, finalMachines.length)} de ${finalMachines.length}`
                   : '0'}
               </span>
             </div>
@@ -154,16 +181,34 @@ function CatalogApp() {
         </main>
       ) : (
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 mt-6">
+
+          {/* Tabs de fuente de datos */}
           <div className="flex justify-center md:justify-start mb-6">
             <div className="bg-slate-200 p-1 rounded-xl inline-flex shadow-inner border border-slate-300 overflow-x-auto">
-              <button onClick={() => setDataSource('AGENCIAS')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap ${dataSource === 'AGENCIAS' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
+              <button
+                onClick={() => setDataSource('AGENCIAS')}
+                className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap ${dataSource === 'AGENCIAS' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
                 Agencias
               </button>
-              <button onClick={() => setDataSource('FACEBOOK')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap ${dataSource === 'FACEBOOK' ? 'bg-[#1877F2] text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span> Marketplace
+              <button
+                onClick={() => setDataSource('FACEBOOK')}
+                className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap ${dataSource === 'FACEBOOK' ? 'bg-[#1877F2] text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
+              >
+                <span className="w-2 h-2 bg-current rounded-full shrink-0" aria-hidden="true" />
+                Marketplace
               </button>
-              <button onClick={() => setDataSource('ALL')} className={`px-5 py-2 rounded-lg font-bold text-xs transition-all whitespace-nowrap ${dataSource === 'ALL' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}>
-                Mezclar Todo
+              <button
+                onClick={() => setDataSource('ALL')}
+                className={`px-5 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-2 whitespace-nowrap ${dataSource === 'ALL' ? 'bg-slate-800 text-white shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Todo
               </button>
             </div>
           </div>
@@ -177,23 +222,34 @@ function CatalogApp() {
                 isRefreshing={loading}
                 lastUpdate={lastUpdate}
                 onClearAll={filters.resetAllFilters}
-                onCategoryChange={(val: string) => { 
-                filters.resetAllFilters(); 
-                router.push(`/?cat=${encodeURIComponent(val)}`); 
-              }}
+                onCategoryChange={(val: string) => {
+                  filters.resetAllFilters();
+                  router.push(`/?cat=${encodeURIComponent(val)}`);
+                }}
               />
             </div>
 
             <main className="flex-1 w-full flex flex-col min-h-screen">
               {loading ? (
-                <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-slate-200">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto" />
-                  <p className="text-slate-500 mt-4 font-medium italic">Descargando catálogo completo...</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {Array.from({ length: ITEMS_PER_PAGE }).map((_, i) => <SkeletonCard key={i} />)}
                 </div>
               ) : finalMachines.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200 shadow-sm">
+                  <svg className="w-12 h-12 text-slate-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   <h3 className="text-xl font-bold text-slate-700">Sin coincidencias con estos filtros</h3>
-                  <p className="text-slate-500 mt-2 mb-6">Prueba habilitar "Call For Price" o limpiar los filtros de ubicación y año.</p>
+                  <p className="text-slate-500 mt-2 mb-6">Prueba habilitar "Call For Price" o ajusta los filtros de ubicación y año.</p>
+                  <button
+                    onClick={filters.resetAllFilters}
+                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-2.5 rounded-xl transition-colors shadow-md shadow-orange-500/20"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Limpiar todos los filtros
+                  </button>
                 </div>
               ) : (
                 <>
@@ -202,33 +258,39 @@ function CatalogApp() {
                   </div>
 
                   {totalPages > 1 && (
-                    <div className="mt-10 mb-8 flex justify-center items-center gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-fit mx-auto">
+                    <div className="mt-10 mb-8 flex justify-center items-center gap-1.5 bg-white p-3 rounded-xl border border-slate-200 shadow-sm w-fit mx-auto">
                       <button
                         onClick={() => handlePageChange(currentPage - 1)}
                         disabled={currentPage === 1}
+                        aria-label="Página anterior"
                         className={`p-2 rounded-lg font-bold transition-colors ${currentPage === 1 ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}`}
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
                       </button>
 
-                      <div className="flex gap-1 overflow-x-auto max-w-50 sm:max-w-none no-scrollbar">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`w-10 h-10 rounded-lg font-bold text-sm transition-all shrink-0 ${currentPage === page ? 'bg-orange-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                      </div>
+                      {getPaginationRange(currentPage, totalPages).map((page, idx) =>
+                        page === '...'
+                          ? <span key={`ellipsis-${idx}`} className="w-10 h-10 flex items-center justify-center text-slate-400 font-bold select-none">…</span>
+                          : (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page as number)}
+                              aria-label={`Ir a página ${page}`}
+                              aria-current={currentPage === page ? 'page' : undefined}
+                              className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${currentPage === page ? 'bg-orange-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+                            >
+                              {page}
+                            </button>
+                          )
+                      )}
 
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
+                        aria-label="Página siguiente"
                         className={`p-2 rounded-lg font-bold transition-colors ${currentPage === totalPages ? 'text-slate-300 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100'}`}
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                       </button>
                     </div>
                   )}
@@ -244,7 +306,7 @@ function CatalogApp() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-900 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-900 flex justify-center items-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" /></div>}>
       <CatalogApp />
     </Suspense>
   );
