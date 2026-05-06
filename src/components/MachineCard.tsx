@@ -2,17 +2,19 @@
 
 import React, { useState } from 'react';
 import type { Machine } from '@/types';
+import { CAT, YELLOW_CATEGORIES, TRUCK_CATEGORIES } from '@/constants/machineCategories';
+import { CURRENCY_LOCALE, CURRENCY, BADGE_COLOR } from '@/constants/appConfig';
 
 export default function MachineCard({ machine }: { machine: Machine }) {
   const [imgIndex, setImgIndex] = useState(0);
 
-  const isYellow = ['Retroexcavadoras', 'Excavadoras', 'Topadores', 'Motoconformadoras', 'Cargadores', 'Elevadores'].includes(machine.categoria_tarea);
-  const isTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones', 'Gruas Titanes'].includes(machine.categoria_tarea);
+  const isYellow = YELLOW_CATEGORIES.includes(machine.categoria_tarea);
+  const isTruck = TRUCK_CATEGORIES.includes(machine.categoria_tarea);
   void isTruck;
 
   const formatPrice = (price: number | string) => {
     if (!price || price === 0) return null;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(price));
+    return new Intl.NumberFormat(CURRENCY_LOCALE, { style: 'currency', currency: CURRENCY, maximumFractionDigits: 0 }).format(Number(price));
   };
 
   const renderUso = () => {
@@ -98,7 +100,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
         )}
 
         {/* Badge de origen */}
-        <div className="absolute top-2 left-2 bg-[#1b2b4d] text-white text-[9px] font-black px-2.5 py-1 rounded shadow uppercase tracking-widest z-10">
+        <div className="absolute top-2 left-2 text-white text-[9px] font-black px-2.5 py-1 rounded shadow uppercase tracking-widest z-10" style={{ backgroundColor: BADGE_COLOR }}>
           {machine.pagina}
         </div>
       </div>
@@ -118,7 +120,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
         </h4>
 
         {/* Etiquetas dinámicas por categoría */}
-        {machine.categoria_tarea === 'Retroexcavadoras' && (
+        {machine.categoria_tarea === CAT.RETROEXCAVADORAS && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {machine.es_4x4 && <span className="bg-orange-50 text-orange-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-orange-200">4x4</span>}
             {machine.tiene_cabina && <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">Cabina</span>}
@@ -127,19 +129,19 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             {machine.tiene_almeja && <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">4-en-1</span>}
           </div>
         )}
-        {machine.categoria_tarea === 'Bombas' && machine.tipo_pluma && (
+        {machine.categoria_tarea === CAT.BOMBAS && machine.tipo_pluma && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             <span className="bg-blue-50 text-blue-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-blue-200">{machine.tipo_pluma}</span>
           </div>
         )}
-        {machine.categoria_tarea === 'Elevadores' && (
+        {machine.categoria_tarea === CAT.ELEVADORES && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {machine.subtipo_elevador && <span className="bg-purple-50 text-purple-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-purple-200">{machine.subtipo_elevador}</span>}
             {machine.combustible && <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-emerald-200">{machine.combustible}</span>}
             {machine.alcance && machine.alcance > 0 && <span className="bg-sky-50 text-sky-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-sky-200">{machine.alcance} FT</span>}
           </div>
         )}
-        {machine.categoria_tarea === 'rough_terrain' && (
+        {machine.categoria_tarea === CAT.ROUGH_TERRAIN_DB && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             {machine.subtipo_grua_terreno && <span className="bg-slate-800 text-white text-[9px] font-black px-2 py-0.5 rounded uppercase shadow-sm">{machine.subtipo_grua_terreno}</span>}
             {machine.capacidad && <span className="bg-emerald-50 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-emerald-200">{machine.capacidad}</span>}
@@ -147,12 +149,12 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             {machine.es_4x4 && <span className="bg-orange-50 text-orange-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-orange-200">4X4 / AWD</span>}
           </div>
         )}
-        {machine.categoria_tarea === 'Camiones Volteo' && machine.traccion_camion && (
+        {machine.categoria_tarea === CAT.CAMIONES_VOLTEO && machine.traccion_camion && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             <span className="bg-orange-50 text-orange-700 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-orange-200">{machine.traccion_camion}</span>
           </div>
         )}
-        {machine.categoria_tarea === 'Motoconformadoras' && machine.tiene_ripper && (
+        {machine.categoria_tarea === CAT.MOTOCONFORMADORAS && machine.tiene_ripper && (
           <div className="flex flex-wrap gap-1.5 mb-4">
             <span className="bg-slate-100 text-slate-600 text-[9px] font-black px-2 py-0.5 rounded uppercase border border-slate-200">Con Ripper</span>
           </div>
@@ -190,10 +192,10 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             </div>
             <div className="overflow-hidden border-l border-r border-slate-200 px-2">
               <p className="text-[8px] text-orange-500 font-bold uppercase tracking-wider mb-0.5">
-                {machine.categoria_tarea === 'Camiones Volteo' ? 'Ejes' : 'Capacidad'}
+                {machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? 'Ejes' : 'Capacidad'}
               </p>
-              <p className="text-[10px] font-black text-slate-800 truncate" title={machine.categoria_tarea === 'Camiones Volteo' ? machine.ejes_traseros : machine.capacidad}>
-                {machine.categoria_tarea === 'Camiones Volteo' ? (machine.ejes_traseros || 'N/D') : (machine.capacidad || 'N/D')}
+              <p className="text-[10px] font-black text-slate-800 truncate" title={machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? machine.ejes_traseros : machine.capacidad}>
+                {machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? (machine.ejes_traseros || 'N/D') : (machine.capacidad || 'N/D')}
               </p>
             </div>
             <div className="overflow-hidden pl-1">

@@ -10,8 +10,7 @@ import MachineCard from '@/components/MachineCard';
 import { CATEGORIAS_INICIO } from '@/constants/categories';
 import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters } from '@/hooks/useMachineFilters';
-
-const ITEMS_PER_PAGE = 24;
+import { ITEMS_PER_PAGE } from '@/constants/appConfig';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">

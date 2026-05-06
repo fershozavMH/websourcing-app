@@ -1,13 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import type { SortOption } from '@/types';
-
-const USA_STATES = [
-  "WEST - Western USA", "EAST - Eastern USA", "CENTRAL - Central USA", "SOUTH - Southern USA", "NORTH - Northern USA",
-  "AL - Alabama", "AK - Alaska", "AZ - Arizona", "AR - Arkansas", "CA - California", "CO - Colorado", "CT - Connecticut", "DE - Delaware", "FL - Florida", "GA - Georgia", "HI - Hawaii", "ID - Idaho", "IL - Illinois", "IN - Indiana", "IA - Iowa", "KS - Kansas", "KY - Kentucky", "LA - Louisiana", "ME - Maine", "MD - Maryland", "MA - Massachusetts", "MI - Michigan", "MN - Minnesota", "MS - Mississippi", "MO - Missouri", "MT - Montana", "NE - Nebraska", "NV - Nevada", "NH - New Hampshire", "NJ - New Jersey", "NM - New Mexico", "NY - New York", "NC - North Carolina", "ND - North Dakota", "OH - Ohio", "OK - Oklahoma", "OR - Oregon", "PA - Pennsylvania", "RI - Rhode Island", "SC - South Carolina", "SD - South Dakota", "TN - Tennessee", "TX - Texas", "UT - Utah", "VT - Vermont", "VA - Virginia", "WA - Washington", "WV - West Virginia", "WI - Wisconsin", "WY - Wyoming"
-];
-const CAN_PROVINCES = [
-  "AB - Alberta", "BC - British Columbia", "MB - Manitoba", "NB - New Brunswick", "NL - Newfoundland and Labrador", "NS - Nova Scotia", "ON - Ontario", "PE - Prince Edward Island", "QC - Quebec", "SK - Saskatchewan"
-];
+import { CAT, CRANE_CATEGORIES, CHASSIS_FILTER_CATEGORIES, normalizeCategory } from '@/constants/machineCategories';
+import { USA_STATES, CAN_PROVINCES } from '@/constants/locations';
 
 const MultiSelectModal = ({
   isOpen, onClose, title, options, selected, onApply
@@ -91,13 +85,13 @@ const MultiSelectModal = ({
 export default function Filters(props: any) {
   const [activeModal, setActiveModal] = useState<'PAIS' | 'ESTADO' | 'MARCA' | 'MODELO' | 'MOTOR' | 'TRACCION' | 'EJES' | null>(null);
 
-  const normalizedCategory = ['Rough Terrain', 'All Terrain'].includes(props.categoryValue) ? 'rough_terrain' : props.categoryValue;
+  const normalizedCategory = normalizeCategory(props.categoryValue);
 
-  const isBomba = normalizedCategory === 'Bombas';
-  const isRetro = normalizedCategory === 'Retroexcavadoras';
-  const isGrua = ['Gruas Titanes', 'Gruas Articuladas', 'rough_terrain'].includes(normalizedCategory);
-  const isArticulada = normalizedCategory === 'Gruas Articuladas';
-  const isPureTruck = ['Camiones Volteo', 'Camiones Trompo', 'Camiones Pipa', 'Tractocamiones'].includes(normalizedCategory);
+  const isBomba = normalizedCategory === CAT.BOMBAS;
+  const isRetro = normalizedCategory === CAT.RETROEXCAVADORAS;
+  const isGrua = CRANE_CATEGORIES.includes(normalizedCategory);
+  const isArticulada = normalizedCategory === CAT.GRUAS_ARTICULADAS;
+  const isPureTruck = ([CAT.CAMIONES_VOLTEO, CAT.CAMIONES_TROMPO, CAT.CAMIONES_PIPA, CAT.TRACTOCAMIONES] as string[]).includes(normalizedCategory);
   const showTruckFilters = props.categoryValue === 'ALL' || isPureTruck || isGrua || isBomba;
 
   const availableStates = useMemo(() => {
@@ -361,7 +355,7 @@ export default function Filters(props: any) {
           </div>
         )}
 
-        {normalizedCategory === 'rough_terrain' && (
+        {normalizedCategory === CAT.ROUGH_TERRAIN_DB && (
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
             <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
               Especificaciones de Grúa Terreno
@@ -376,7 +370,7 @@ export default function Filters(props: any) {
           </div>
         )}
 
-        {(normalizedCategory === 'Camiones Pipa' || normalizedCategory === 'Camiones Volteo') && (
+        {CHASSIS_FILTER_CATEGORIES.includes(normalizedCategory) && (
           <div className="space-y-3 bg-cyan-50 p-4 rounded-xl border border-cyan-100 animate-fade-in mt-4">
             <label className="text-[11px] font-black text-cyan-800 uppercase tracking-wider flex items-center gap-2">
               Especificaciones de Chasis
@@ -386,7 +380,7 @@ export default function Filters(props: any) {
           </div>
         )}
 
-        {normalizedCategory === 'Motoconformadoras' && (
+        {normalizedCategory === CAT.MOTOCONFORMADORAS && (
           <>
             <hr className="border-slate-100" />
             <div className="space-y-2 animate-fade-in">
@@ -400,7 +394,7 @@ export default function Filters(props: any) {
           </>
         )}
 
-        {normalizedCategory === 'Elevadores' && (
+        {normalizedCategory === CAT.ELEVADORES && (
           <div className="space-y-3 bg-purple-50 p-4 rounded-xl border border-purple-100 animate-fade-in mt-4">
             <label className="text-[11px] font-black text-purple-800 uppercase tracking-wider flex items-center gap-2">
               Especificaciones de Elevación
