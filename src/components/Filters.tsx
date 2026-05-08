@@ -8,6 +8,7 @@ import { BombaFilters } from './filters/BombaFilters';
 import { RetroFilters } from './filters/RetroFilters';
 import { GruaFilters } from './filters/GruaFilters';
 import { ElevadorFilters } from './filters/ElevadorFilters';
+import { CompactadoraFilters } from './filters/CompactadoraFilters';
 
 type ModalId = 'PAIS' | 'ESTADO' | 'MARCA' | 'MODELO' | 'MOTOR' | 'TRACCION' | 'EJES' | null;
 
@@ -59,6 +60,9 @@ export default function Filters(props: any) {
     if (props.reqSubtipoElevador && props.reqSubtipoElevador !== 'ALL') count++;
     if (props.reqCombustible && props.reqCombustible !== 'ALL') count++;
     if (props.transmissionValue && props.transmissionValue !== 'ALL') count++;
+    if (props.reqSubtipoCompactadora && props.reqSubtipoCompactadora !== 'ALL') count++;
+    if (props.reqMotorCompactadora && props.reqMotorCompactadora !== 'ALL') count++;
+    if (props.reqLibrasDiferencial && props.reqLibrasDiferencial !== 'ALL') count++;
     return count;
   }, [props]);
 
@@ -221,6 +225,38 @@ export default function Filters(props: any) {
 
         {normalizedCategory === CAT.ELEVADORES && (
           <ElevadorFilters reqSubtipoElevador={props.reqSubtipoElevador} onReqSubtipoElevadorChange={props.onReqSubtipoElevadorChange} reqCombustible={props.reqCombustible} onReqCombustibleChange={props.onReqCombustibleChange} minAlcanceValue={props.minAlcanceValue} onMinAlcanceChange={props.onMinAlcanceChange} maxAlcanceValue={props.maxAlcanceValue} onMaxAlcanceChange={props.onMaxAlcanceChange} />
+        )}
+
+        {normalizedCategory === CAT.COMPACTADORAS && (
+          <CompactadoraFilters
+            reqSubtipoCompactadora={props.reqSubtipoCompactadora}
+            onReqSubtipoCompactadoraChange={props.onReqSubtipoCompactadoraChange}
+            reqMotor={props.reqMotorCompactadora}
+            onMotorChange={props.onReqMotorCompactadoraChange}
+          />
+        )}
+
+        {normalizedCategory === CAT.TRACTOCAMIONES && (
+          <>
+            <hr className="border-slate-100 mt-4" />
+            <div className="space-y-2 animate-fade-in mt-4">
+              <label htmlFor="filter-diferencial" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Capacidad de Diferencial (Libras)
+              </label>
+              <select
+                id="filter-diferencial"
+                value={props.reqLibrasDiferencial}
+                onChange={(e) => props.onReqLibrasDiferencialChange(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
+              >
+                <option value="ALL">Cualquiera</option>
+                <option value="40000">40,000 lbs</option>
+                <option value="42000">42,000 lbs</option>
+                <option value="44000">44,000 lbs</option>
+                <option value="46000">46,000+ lbs</option>
+              </select>
+            </div>
+          </>
         )}
 
       </aside>

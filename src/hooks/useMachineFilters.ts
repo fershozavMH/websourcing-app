@@ -80,6 +80,10 @@ export const useMachineFilters = (machines: Machine[]) => {
   const [minAlcanceValue, setMinAlcanceValue] = useState('');
   const [maxAlcanceValue, setMaxAlcanceValue] = useState('');
 
+  const [reqSubtipoCompactadora, setReqSubtipoCompactadora] = useState('ALL');
+  const [reqMotorCompactadora, setReqMotorCompactadora] = useState('ALL');
+  const [reqLibrasDiferencial, setReqLibrasDiferencial] = useState('ALL');
+
   const availableTracciones = useMemo(() => [...TRACCIONES], []);
   const availableEjes = useMemo(() => [...EJES_TRASEROS], []);
   const availableCountries = useMemo(() => [...AVAILABLE_COUNTRIES], []);
@@ -116,7 +120,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   }, [machines, categoryValue]);
 
   const resetAllFilters = () => {
-    setSearchValue(''); setCategoryValue(CAT.ALL); setSortValue('recent');
+    setSearchValue(''); setSortValue('recent');
     setSelectedCountries([]); setSelectedStates([]); setSelectedBrands([]); setSelectedModels([]); setSelectedEngines([]);
     setMinYearValue(''); setMaxYearValue(''); setMinCapacityValue(''); setMaxCapacityValue('');
     setMinPriceValue(''); setMaxPriceValue(''); setMinHoursValue(''); setMaxHoursValue('');
@@ -125,6 +129,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     setReqCabin('ALL'); setReqHammer('ALL'); setReqExtension('ALL'); setReq4x4('ALL'); setReqClam('ALL');
     setReqRipper('ALL'); setSelectedTracciones([]); setSelectedEjes([]);
     setReqSubtipoElevador('ALL'); setReqCombustible('ALL'); setMinAlcanceValue(''); setMaxAlcanceValue('');
+    setReqSubtipoCompactadora('ALL'); setReqMotorCompactadora('ALL'); setReqLibrasDiferencial('ALL');
   };
 
   const filteredMachines = useMemo(() => {
@@ -284,6 +289,32 @@ export const useMachineFilters = (machines: Machine[]) => {
         }
       }
 
+      // --- FILTROS DE COMPACTADORAS ---
+      if (normalizedCategory === CAT.COMPACTADORAS) {
+        if (reqSubtipoCompactadora !== 'ALL') {
+          const subtipoBD = (m.subtipo_compactadora || '').toLowerCase();
+          if (subtipoBD !== reqSubtipoCompactadora.toLowerCase()) return false;
+        }
+        if (reqMotorCompactadora !== 'ALL') {
+          const motorBD = (m.motor || '').toUpperCase();
+          if (motorBD !== reqMotorCompactadora) return false;
+        }
+      }
+
+      // --- FILTROS DE TRACTOCAMIONES ---
+      if (normalizedCategory === CAT.TRACTOCAMIONES) {
+        if (reqLibrasDiferencial !== 'ALL') {
+          const librasBD = m.libras_diferencial || 0;
+          const librasReq = parseInt(reqLibrasDiferencial);
+          
+          if (librasReq === 46000) {
+            if (librasBD < 46000) return false; 
+          } else {
+            if (librasBD !== librasReq) return false;
+          }
+        }
+      }
+
       if (m.categoria_tarea === CAT.BOMBAS && boomTypeValue !== 'ALL') {
         const t = (m.titulo + ' ' + (m.tipo_pluma || '')).toLowerCase();
         if (boomTypeValue === 'Z') {
@@ -332,6 +363,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer,
     reqExtension, req4x4, reqClam, selectedTracciones, selectedEjes, reqRipper,
     reqSubtipoElevador, reqCombustible, minAlcanceValue, maxAlcanceValue,
+    reqSubtipoCompactadora, reqMotorCompactadora, reqLibrasDiferencial
   ]);
 
   return {
@@ -370,5 +402,9 @@ export const useMachineFilters = (machines: Machine[]) => {
     reqCombustible, onReqCombustibleChange: setReqCombustible,
     minAlcanceValue, onMinAlcanceChange: setMinAlcanceValue,
     maxAlcanceValue, onMaxAlcanceChange: setMaxAlcanceValue,
+
+    reqSubtipoCompactadora, onReqSubtipoCompactadoraChange: setReqSubtipoCompactadora,
+    reqMotorCompactadora, onReqMotorCompactadoraChange: setReqMotorCompactadora,
+    reqLibrasDiferencial, onReqLibrasDiferencialChange: setReqLibrasDiferencial
   };
 };

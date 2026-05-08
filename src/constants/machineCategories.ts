@@ -15,6 +15,7 @@ export const CAT = {
   ROUGH_TERRAIN: 'Rough Terrain',
   ALL_TERRAIN: 'All Terrain',
   ROUGH_TERRAIN_DB: 'rough_terrain',
+  COMPACTADORAS: 'Compactadoras',
   ALL: 'ALL',
 } as const;
 
@@ -27,6 +28,7 @@ export const YELLOW_CATEGORIES: ReadonlyArray<string> = [
   CAT.MOTOCONFORMADORAS,
   CAT.CARGADORES,
   CAT.ELEVADORES,
+  CAT.COMPACTADORAS,
 ];
 
 export const TRUCK_CATEGORIES: ReadonlyArray<string> = [

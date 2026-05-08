@@ -20,5 +20,6 @@ export const CATEGORIAS_INICIO = [
   { id: CAT.ELEVADORES,       nombre: 'Elevadores',       icon: <img src="/iconos/elevador.webp"       alt="Elevador"   className={icon32} /> },
   { id: CAT.ROUGH_TERRAIN,    nombre: 'Rough Terrain',    icon: <img src="/iconos/rough-terrain.webp"  alt="RT"         className={icon42} /> },
   { id: CAT.ALL_TERRAIN,      nombre: 'All Terrain',      icon: <img src="/iconos/all-terrain.webp"    alt="AT"         className={icon42} /> },
+  { id: CAT.COMPACTADORAS,    nombre: 'Compactadoras',    icon: <img src="/iconos/compactadoras.png"   alt="Compactadora" className={icon32} /> },
   { id: CAT.ALL,              nombre: 'Ver Todo',         icon: <svg className="w-16 h-16 text-slate-700 transition-all duration-300 group-hover:scale-110 group-hover:text-orange-500 mb-6" viewBox="0 0 64 64" fill="currentColor"><path d="M12 12h16v16H12zM36 12h16v16H36zM12 36h16v16H12zM36 36h16v16H36z"/></svg> },
 ];
