@@ -51,6 +51,12 @@ export interface Machine {
   subtipo_elevador?: string;
   combustible?: string;
   alcance?: number;
-  
+
   subtipo_grua_terreno?: string;
+
+  // --- CAMPOS PARA COMPACTADORAS ---
+  subtipo_compactadora?: string;
+
+  // --- CAMPOS PARA TRACTOCAMIONES ---
+  libras_diferencial?: number;
 }
