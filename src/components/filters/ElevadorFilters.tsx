@@ -32,9 +32,9 @@ export function ElevadorFilters({
             className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-purple-500 outline-none text-slate-700"
           >
             <option value="ALL">Todos</option>
-            <option value="ARTICULADO">Articulado (Boom)</option>
-            <option value="TELESCOPICO">Telescópico (Straight)</option>
-            <option value="TIJERA">Tijera (Scissor)</option>
+            <option value="ARTICULADO">Articulado</option>
+            <option value="TELESCOPICO">Telescópico</option>
+            <option value="TIJERA">Tijera</option>
           </select>
         </div>
         <div className="space-y-1">
