@@ -27,6 +27,7 @@ export interface Machine {
   tipo_pluma?: string;
 
   // --- NUEVOS CAMPOS TÉCNICOS (Opcionales con "?" porque FB no los tiene) ---
+  marca?: string;
   motor?: string;
   transmision?: string;
   capacidad?: string;
