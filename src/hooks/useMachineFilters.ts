@@ -5,38 +5,29 @@ import { AVAILABLE_COUNTRIES } from '@/constants/locations';
 import { TRACCIONES, EJES_TRASEROS } from '@/constants/vehicleSpecs';
 
 const getMachineBrand = (m: Machine): string => {
-  if (m.marca_camion) return m.marca_camion.toUpperCase();
-  if (m.marca_pluma) return m.marca_pluma.toUpperCase();
-  const t = m.titulo.toUpperCase();
-  if (t.includes('CAT ') || t.includes('CATERPILLAR')) return 'CATERPILLAR';
-  if (t.includes('CASE')) return 'CASE';
-  if (t.includes('DEERE')) return 'JOHN DEERE';
-  if (t.includes('JCB')) return 'JCB';
-  if (t.includes('KOMATSU')) return 'KOMATSU';
-  if (t.includes('PUTZMEISTER')) return 'PUTZMEISTER';
-  if (t.includes('SCHWING')) return 'SCHWING';
-  if (t.includes('ALLIANCE')) return 'ALLIANCE';
-  if (t.includes('CONCORD')) return 'CONCORD';
-  if (t.includes('FREIGHTLINER')) return 'FREIGHTLINER';
-  if (t.includes('INTERNATIONAL')) return 'INTERNATIONAL';
-  if (t.includes('KENWORTH')) return 'KENWORTH';
-  if (t.includes('MACK')) return 'MACK';
-  if (t.includes('PETERBILT')) return 'PETERBILT';
-  if (t.includes('VOLVO')) return 'VOLVO';
-  return 'OTRA';
+  // marca_camion y marca_pluma solo son confiables en sus categorías propias;
+  // en otras categorías el scraper puede haberlas llenado incorrectamente
+  if (TRUCK_CATEGORIES.includes(m.categoria_tarea) && m.marca_camion) return m.marca_camion.toUpperCase();
+  if (m.categoria_tarea === CAT.BOMBAS && m.marca_pluma) return m.marca_pluma.toUpperCase();
+
+  // Título formato: "AÑO MARCA MODELO [...]" — marca siempre en posición [1]
+  const words = m.titulo.toUpperCase().split(/\s+/);
+  const brand = words[1] ?? '';
+  const next = words[2] ?? '';
+
+  if (brand === 'CAT') return 'CATERPILLAR';
+  if (brand === 'JOHN' && next === 'DEERE') return 'JOHN DEERE';
+  if (brand === 'DEERE') return 'JOHN DEERE';
+  if (brand === 'WACKER' || brand === 'WACKER-NEUSON' || brand === 'WACKERNEUSON') return 'WACKER NEUSON';
+
+  return brand;
 };
 
 const getMachineModel = (m: Machine): string | null => {
-  if ((m as any).modelo) return (m as any).modelo.toUpperCase();
-  const regex = /\b([A-Z]*\d+[A-Z\d]*)\b/gi;
-  let match;
-  while ((match = regex.exec(m.titulo)) !== null) {
-    const str = match[1].toUpperCase();
-    const num = parseInt(str);
-    if (!isNaN(num) && num >= 1980 && num <= 2030 && str.length === 4) continue;
-    return str;
-  }
-  return null;
+  if (m.modelo) return m.modelo.toUpperCase();
+  // Título formato: "AÑO MARCA MODELO [...]" — modelo en posición [2]
+  const words = m.titulo.toUpperCase().split(/\s+/);
+  return words[2] ?? null;
 };
 
 export const useMachineFilters = (machines: Machine[]) => {
@@ -93,7 +84,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     machines.forEach(m => {
       if (categoryValue !== CAT.ALL && m.categoria_tarea !== categoryValue && m.categoria_tarea !== CAT.ROUGH_TERRAIN_DB) return;
       const brand = getMachineBrand(m);
-      if (brand !== 'OTRA') brands.add(brand);
+      if (brand) brands.add(brand);
     });
     return Array.from(brands).sort();
   }, [machines, categoryValue]);
