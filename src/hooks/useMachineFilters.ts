@@ -5,6 +5,7 @@ import { AVAILABLE_COUNTRIES } from '@/constants/locations';
 import { TRACCIONES, EJES_TRASEROS } from '@/constants/vehicleSpecs';
 
 const getMachineBrand = (m: Machine): string => {
+  if (m.marca) return m.marca.toUpperCase();
   // marca_camion y marca_pluma solo son confiables en sus categorías propias;
   // en otras categorías el scraper puede haberlas llenado incorrectamente
   if (TRUCK_CATEGORIES.includes(m.categoria_tarea) && m.marca_camion) return m.marca_camion.toUpperCase();
