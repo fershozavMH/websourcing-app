@@ -4,11 +4,8 @@ import "./globals.css";
 import Script from "next/script";
 import { CLARITY_TRACKING_ID } from "@/constants/appConfig";
 
-// @ts-ignore
 import 'swiper/css';
-// @ts-ignore
 import 'swiper/css/navigation';
-// @ts-ignore
 import 'swiper/css/pagination';
 
 const inter = Inter({ subsets: ["latin"] });

@@ -1,8 +1,16 @@
 import { useState, useMemo } from 'react';
 import type { Machine, SortOption } from '@/types';
-import { CAT, TRUCK_CATEGORIES, CHASSIS_FILTER_CATEGORIES, normalizeCategory } from '@/constants/machineCategories';
+import { CAT, TRUCK_CATEGORIES, CHASSIS_FILTER_CATEGORIES, TRACTOCAMION_SUBTYPES, normalizeCategory } from '@/constants/machineCategories';
 import { AVAILABLE_COUNTRIES } from '@/constants/locations';
 import { TRACCIONES, EJES_TRASEROS } from '@/constants/vehicleSpecs';
+
+const matchesCategory = (machineCat: string, selectedCat: string): boolean => {
+  if (selectedCat === CAT.ALL) return true;
+  const normalized = normalizeCategory(selectedCat);
+  if (normalized === CAT.TRACTOCAMIONES) return TRACTOCAMION_SUBTYPES.includes(machineCat);
+  if (normalized === CAT.ROUGH_TERRAIN_DB) return machineCat === CAT.ROUGH_TERRAIN_DB;
+  return machineCat === normalized;
+};
 
 const getMachineBrand = (m: Machine): string => {
   if (m.marca) return m.marca.toUpperCase();
@@ -74,7 +82,8 @@ export const useMachineFilters = (machines: Machine[]) => {
 
   const [reqSubtipoCompactadora, setReqSubtipoCompactadora] = useState('ALL');
   const [reqMotorCompactadora, setReqMotorCompactadora] = useState('ALL');
-  const [reqLibrasDiferencial, setReqLibrasDiferencial] = useState('ALL');
+  const [reqTipoTractocamion, setReqTipoTractocamion] = useState('ALL');
+  const [reqPesoEje, setReqPesoEje] = useState('');
 
   const availableTracciones = useMemo(() => [...TRACCIONES], []);
   const availableEjes = useMemo(() => [...EJES_TRASEROS], []);
@@ -83,7 +92,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const availableBrands = useMemo(() => {
     const brands = new Set<string>();
     machines.forEach(m => {
-      if (categoryValue !== CAT.ALL && m.categoria_tarea !== categoryValue && m.categoria_tarea !== CAT.ROUGH_TERRAIN_DB) return;
+      if (!matchesCategory(m.categoria_tarea, categoryValue)) return;
       const brand = getMachineBrand(m);
       if (brand) brands.add(brand);
     });
@@ -93,7 +102,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const availableModels = useMemo(() => {
     const models = new Set<string>();
     machines.forEach(m => {
-      if (categoryValue !== CAT.ALL && m.categoria_tarea !== categoryValue && m.categoria_tarea !== CAT.ROUGH_TERRAIN_DB) return;
+      if (!matchesCategory(m.categoria_tarea, categoryValue)) return;
       const mBrand = getMachineBrand(m);
       if (selectedBrands.length > 0 && !selectedBrands.includes(mBrand)) return;
       const model = getMachineModel(m);
@@ -105,7 +114,7 @@ export const useMachineFilters = (machines: Machine[]) => {
   const availableEngines = useMemo(() => {
     const engines = new Set<string>();
     machines.forEach(m => {
-      if (categoryValue !== CAT.ALL && m.categoria_tarea !== categoryValue && m.categoria_tarea !== CAT.ROUGH_TERRAIN_DB) return;
+      if (!matchesCategory(m.categoria_tarea, categoryValue)) return;
       if (m.motor) engines.add(m.motor.toUpperCase());
     });
     return Array.from(engines).sort();
@@ -121,7 +130,8 @@ export const useMachineFilters = (machines: Machine[]) => {
     setReqCabin('ALL'); setReqHammer('ALL'); setReqExtension('ALL'); setReq4x4('ALL'); setReqClam('ALL');
     setReqRipper('ALL'); setSelectedTracciones([]); setSelectedEjes([]);
     setReqSubtipoElevador('ALL'); setReqCombustible('ALL'); setMinAlcanceValue(''); setMaxAlcanceValue('');
-    setReqSubtipoCompactadora('ALL'); setReqMotorCompactadora('ALL'); setReqLibrasDiferencial('ALL');
+    setReqSubtipoCompactadora('ALL'); setReqMotorCompactadora('ALL');
+    setReqTipoTractocamion('ALL'); setReqPesoEje('');
   };
 
   const filteredMachines = useMemo(() => {
@@ -145,7 +155,7 @@ export const useMachineFilters = (machines: Machine[]) => {
 
       const normalizedCategory = normalizeCategory(categoryValue);
 
-      if (normalizedCategory !== CAT.ALL && m.categoria_tarea !== normalizedCategory) return false;
+      if (!matchesCategory(m.categoria_tarea, categoryValue)) return false;
 
       const loc = (m.ubicacion || '').toLowerCase();
 
@@ -199,16 +209,15 @@ export const useMachineFilters = (machines: Machine[]) => {
 
       let machineHours = 0;
       let machineMiles = 0;
-      const mDynamic = m as any;
 
       if (m.categoria_tarea === CAT.BOMBAS) {
         machineHours = m.uso_bomba || 0;
         machineMiles = m.uso_motor || 0;
       } else if (TRUCK_CATEGORIES.includes(m.categoria_tarea)) {
-        machineHours = mDynamic.uso_horas || m.uso || 0;
-        machineMiles = mDynamic.uso_millas || m.uso_motor || 0;
+        machineHours = m.uso_horas || m.uso || 0;
+        machineMiles = m.uso_millas || m.uso_motor || 0;
       } else {
-        machineHours = mDynamic.uso_horas || m.uso || 0;
+        machineHours = m.uso_horas || m.uso || 0;
       }
 
       if (maxHoursValue || minHoursValue) {
@@ -231,53 +240,51 @@ export const useMachineFilters = (machines: Machine[]) => {
 
       if (CHASSIS_FILTER_CATEGORIES.includes(m.categoria_tarea)) {
         if (selectedTracciones.length > 0) {
-          const mTracc = (mDynamic.traccion_camion || '').toUpperCase();
+          const mTracc = (m.traccion_camion || '').toUpperCase();
           if (!selectedTracciones.some(tOpt => mTracc.includes(tOpt))) return false;
         }
         if (selectedEjes.length > 0) {
-          const mEjes = (mDynamic.ejes_traseros || '').toUpperCase();
+          const mEjes = (m.ejes_traseros || '').toUpperCase();
           if (!selectedEjes.some(eOpt => mEjes.includes(eOpt))) return false;
         }
       }
 
       if (m.categoria_tarea === CAT.MOTOCONFORMADORAS) {
-        if (reqRipper === 'YES' && !mDynamic.tiene_ripper) return false;
-        if (reqRipper === 'NO' && mDynamic.tiene_ripper) return false;
+        if (reqRipper === 'YES' && !m.tiene_ripper) return false;
+        if (reqRipper === 'NO' && m.tiene_ripper) return false;
       }
 
       if (m.categoria_tarea === CAT.ELEVADORES) {
         if (reqSubtipoElevador !== 'ALL') {
-          const subtipoBD = (mDynamic.subtipo_elevador || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+          const subtipoBD = (m.subtipo_elevador || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
           const reqSubtipo = reqSubtipoElevador.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
           if (subtipoBD !== reqSubtipo) return false;
         }
         if (reqCombustible !== 'ALL') {
-          const combBD = (mDynamic.combustible || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+          const combBD = (m.combustible || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
           const reqComb = reqCombustible.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
           if (combBD !== reqComb) return false;
         }
         if (minAlcanceValue || maxAlcanceValue) {
-          const alcance = mDynamic.alcance || 0;
           const minA = minAlcanceValue ? parseInt(minAlcanceValue) : 0;
           const maxA = maxAlcanceValue ? parseInt(maxAlcanceValue) : Infinity;
-          if (alcance < minA || alcance > maxA) return false;
+          if ((m.alcance || 0) < minA || (m.alcance || 0) > maxA) return false;
         }
       }
 
       if (normalizeCategory(categoryValue) === CAT.ROUGH_TERRAIN_DB) {
         if (categoryValue === CAT.ROUGH_TERRAIN) {
-          const subtipoBD = (mDynamic.subtipo_grua_terreno || m.origen_tarea || '').toUpperCase();
+          const subtipoBD = (m.subtipo_grua_terreno || m.origen_tarea || '').toUpperCase();
           if (!subtipoBD.includes('ROUGH TERRAIN')) return false;
         } else if (categoryValue === CAT.ALL_TERRAIN) {
-          const subtipoBD = (mDynamic.subtipo_grua_terreno || m.origen_tarea || '').toUpperCase();
+          const subtipoBD = (m.subtipo_grua_terreno || m.origen_tarea || '').toUpperCase();
           if (!subtipoBD.includes('ALL TERRAIN')) return false;
         }
 
         if (minAlcanceValue || maxAlcanceValue) {
-          const alcance = mDynamic.alcance || 0;
           const minA = minAlcanceValue ? parseInt(minAlcanceValue) : 0;
           const maxA = maxAlcanceValue ? parseInt(maxAlcanceValue) : Infinity;
-          if (alcance < minA || alcance > maxA) return false;
+          if ((m.alcance || 0) < minA || (m.alcance || 0) > maxA) return false;
         }
       }
 
@@ -294,16 +301,11 @@ export const useMachineFilters = (machines: Machine[]) => {
       }
 
       // --- FILTROS DE TRACTOCAMIONES ---
-      if (normalizedCategory === CAT.TRACTOCAMIONES) {
-        if (reqLibrasDiferencial !== 'ALL') {
-          const librasBD = m.libras_diferencial || 0;
-          const librasReq = parseInt(reqLibrasDiferencial);
-          
-          if (librasReq === 46000) {
-            if (librasBD < 46000) return false; 
-          } else {
-            if (librasBD !== librasReq) return false;
-          }
+      if (TRACTOCAMION_SUBTYPES.includes(m.categoria_tarea)) {
+        if (reqTipoTractocamion !== 'ALL' && m.categoria_tarea !== reqTipoTractocamion) return false;
+        if (reqPesoEje) {
+          const pesoReq = parseFloat(reqPesoEje);
+          if ((m.peso_eje || 0) < pesoReq) return false;
         }
       }
 
@@ -355,7 +357,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     boomBrandValue, craneMountStatus, boomTypeValue, reqCabin, reqHammer,
     reqExtension, req4x4, reqClam, selectedTracciones, selectedEjes, reqRipper,
     reqSubtipoElevador, reqCombustible, minAlcanceValue, maxAlcanceValue,
-    reqSubtipoCompactadora, reqMotorCompactadora, reqLibrasDiferencial
+    reqSubtipoCompactadora, reqMotorCompactadora, reqTipoTractocamion, reqPesoEje
   ]);
 
   return {
@@ -397,6 +399,7 @@ export const useMachineFilters = (machines: Machine[]) => {
 
     reqSubtipoCompactadora, onReqSubtipoCompactadoraChange: setReqSubtipoCompactadora,
     reqMotorCompactadora, onReqMotorCompactadoraChange: setReqMotorCompactadora,
-    reqLibrasDiferencial, onReqLibrasDiferencialChange: setReqLibrasDiferencial
+    reqTipoTractocamion, onReqTipoTractocamionChange: setReqTipoTractocamion,
+    reqPesoEje, onReqPesoEjeChange: setReqPesoEje
   };
 };

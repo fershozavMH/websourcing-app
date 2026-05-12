@@ -20,8 +20,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/'); // Redirige al dashboard principal después del login exitoso
-    } catch (err: any) {
-      console.error(err);
+    } catch {
       setError('Credenciales incorrectas o usuario no autorizado.');
     } finally {
       setLoading(false);

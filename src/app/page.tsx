@@ -8,6 +8,7 @@ import Filters from '@/components/Filters';
 import MachineCard from '@/components/MachineCard';
 
 import { CATEGORIAS_INICIO } from '@/constants/categories';
+import { TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters } from '@/hooks/useMachineFilters';
 import { ITEMS_PER_PAGE } from '@/constants/appConfig';
@@ -103,7 +104,7 @@ function CatalogApp() {
 
   const dropdownCategories = useMemo(() => {
     const baseCats = CATEGORIAS_INICIO.filter(c => c.id !== 'ALL').map(c => c.id);
-    const loadedCats = machines.map(m => m.categoria_tarea).filter(Boolean);
+    const loadedCats = machines.map(m => m.categoria_tarea).filter(cat => Boolean(cat) && !TRACTOCAMION_SUBTYPES.includes(cat));
     return [...new Set([...baseCats, ...loadedCats])].sort();
   }, [machines]);
 

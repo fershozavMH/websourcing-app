@@ -8,6 +8,8 @@ export const CAT = {
   CAMIONES_TROMPO: 'Camiones Trompo',
   CAMIONES_PIPA: 'Camiones Pipa',
   TRACTOCAMIONES: 'Tractocamiones',
+  SLEEPER: 'Sleeper',
+  DAY_CAB: 'Day cab',
   GRUAS_TITANES: 'Gruas Titanes',
   GRUAS_ARTICULADAS: 'Gruas Articuladas',
   BOMBAS: 'Bombas',
@@ -31,11 +33,19 @@ export const YELLOW_CATEGORIES: ReadonlyArray<string> = [
   CAT.COMPACTADORAS,
 ];
 
+// Subtipos reales en Firestore para tractocamiones (el scraper guarda 'Sleeper' / 'Day cab')
+export const TRACTOCAMION_SUBTYPES: ReadonlyArray<string> = [
+  CAT.SLEEPER,
+  CAT.DAY_CAB,
+];
+
 export const TRUCK_CATEGORIES: ReadonlyArray<string> = [
   CAT.CAMIONES_VOLTEO,
   CAT.CAMIONES_TROMPO,
   CAT.CAMIONES_PIPA,
   CAT.TRACTOCAMIONES,
+  CAT.SLEEPER,
+  CAT.DAY_CAB,
   CAT.GRUAS_TITANES,
 ];
 

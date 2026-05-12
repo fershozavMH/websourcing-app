@@ -62,7 +62,8 @@ export default function Filters(props: any) {
     if (props.transmissionValue && props.transmissionValue !== 'ALL') count++;
     if (props.reqSubtipoCompactadora && props.reqSubtipoCompactadora !== 'ALL') count++;
     if (props.reqMotorCompactadora && props.reqMotorCompactadora !== 'ALL') count++;
-    if (props.reqLibrasDiferencial && props.reqLibrasDiferencial !== 'ALL') count++;
+    if (props.reqTipoTractocamion && props.reqTipoTractocamion !== 'ALL') count++;
+    if (props.reqPesoEje) count++;
     return count;
   }, [props]);
 
@@ -190,20 +191,26 @@ export default function Filters(props: any) {
 
         {normalizedCategory === CAT.ROUGH_TERRAIN_DB && (
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
-            <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider">Especificaciones de Grúa Terreno</label>
-            <div className="space-y-1 pt-2">
+            <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+              Especificaciones de Grúa Terreno
+            </label>
+            <div className="space-y-1">
               <label className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Largo de Pluma (Pies / FT)</label>
               <div className="flex gap-2">
-                <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} aria-label="Alcance mínimo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
-                <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} aria-label="Alcance máximo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-sky-500 outline-none" />
+                <input type="number" placeholder="Min FT" value={props.minAlcanceValue} onChange={(e) => props.onMinAlcanceChange(e.target.value)} aria-label="Alcance mínimo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none" />
+                <input type="number" placeholder="Max FT" value={props.maxAlcanceValue} onChange={(e) => props.onMaxAlcanceChange(e.target.value)} aria-label="Alcance máximo en pies" className="w-1/2 bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none" />
               </div>
             </div>
           </div>
         )}
 
         {CHASSIS_FILTER_CATEGORIES.includes(normalizedCategory) && (
-          <div className="space-y-3 bg-cyan-50 p-4 rounded-xl border border-cyan-100 animate-fade-in mt-4">
-            <label className="text-[11px] font-black text-cyan-800 uppercase tracking-wider">Especificaciones de Chasis</label>
+          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
+            <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+              Especificaciones de Chasis
+            </label>
             <MultiSelectTrigger title="Tracción" selected={props.selectedTracciones} onOpen={openModal('TRACCION')} onRemove={(val) => props.onSelectedTraccionesChange(props.selectedTracciones.filter((t: string) => t !== val))} />
             <MultiSelectTrigger title="Ejes Traseros" selected={props.selectedEjes} onOpen={openModal('EJES')} onRemove={(val) => props.onSelectedEjesChange(props.selectedEjes.filter((e: string) => e !== val))} />
           </div>
@@ -239,22 +246,38 @@ export default function Filters(props: any) {
         {normalizedCategory === CAT.TRACTOCAMIONES && (
           <>
             <hr className="border-slate-100 mt-4" />
-            <div className="space-y-2 animate-fade-in mt-4">
-              <label htmlFor="filter-diferencial" className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                Capacidad de Diferencial (Libras)
+            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200 animate-fade-in mt-4">
+              <label className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                Especificaciones de Tractocamión
               </label>
-              <select
-                id="filter-diferencial"
-                value={props.reqLibrasDiferencial}
-                onChange={(e) => props.onReqLibrasDiferencialChange(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-orange-500 outline-none"
-              >
-                <option value="ALL">Cualquiera</option>
-                <option value="40000">40,000 lbs</option>
-                <option value="42000">42,000 lbs</option>
-                <option value="44000">44,000 lbs</option>
-                <option value="46000">46,000+ lbs</option>
-              </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1 col-span-2">
+                  <label htmlFor="filter-tipo-tracto" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Tipo de Cabina</label>
+                  <select
+                    id="filter-tipo-tracto"
+                    value={props.reqTipoTractocamion}
+                    onChange={(e) => props.onReqTipoTractocamionChange(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none text-slate-700"
+                  >
+                    <option value="ALL">Cualquiera</option>
+                    <option value="Sleeper">Sleeper</option>
+                    <option value="Day cab">Day Cab</option>
+                  </select>
+                </div>
+                <div className="space-y-1 col-span-2">
+                  <label htmlFor="filter-peso-eje" className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Peso de Eje Mínimo (ton)</label>
+                  <input
+                    id="filter-peso-eje"
+                    type="number"
+                    step="0.5"
+                    placeholder="ej. 23.0"
+                    value={props.reqPesoEje}
+                    onChange={(e) => props.onReqPesoEjeChange(e.target.value)}
+                    className="w-full bg-white border border-slate-200 rounded-md px-2 py-1.5 text-xs focus:ring-1 focus:ring-orange-500 outline-none"
+                  />
+                </div>
+              </div>
             </div>
           </>
         )}
