@@ -2,15 +2,13 @@
 
 import React, { useState } from 'react';
 import type { Machine } from '@/types';
-import { CAT, YELLOW_CATEGORIES, TRUCK_CATEGORIES } from '@/constants/machineCategories';
+import { CAT, YELLOW_CATEGORIES, TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { CURRENCY_LOCALE, CURRENCY, BADGE_COLOR } from '@/constants/appConfig';
 
 export default function MachineCard({ machine }: { machine: Machine }) {
   const [imgIndex, setImgIndex] = useState(0);
 
   const isYellow = YELLOW_CATEGORIES.includes(machine.categoria_tarea);
-  const isTruck = TRUCK_CATEGORIES.includes(machine.categoria_tarea);
-  void isTruck;
 
   const formatPrice = (price: number | string) => {
     if (!price || price === 0) return null;
@@ -192,10 +190,14 @@ export default function MachineCard({ machine }: { machine: Machine }) {
             </div>
             <div className="overflow-hidden border-l border-r border-slate-200 px-2">
               <p className="text-[8px] text-orange-500 font-bold uppercase tracking-wider mb-0.5">
-                {machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? 'Ejes' : 'Capacidad'}
+                {machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? 'Ejes' : TRACTOCAMION_SUBTYPES.includes(machine.categoria_tarea) ? 'Peso Eje' : 'Capacidad'}
               </p>
-              <p className="text-[10px] font-black text-slate-800 truncate" title={machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? machine.ejes_traseros : machine.capacidad}>
-                {machine.categoria_tarea === CAT.CAMIONES_VOLTEO ? (machine.ejes_traseros || 'N/D') : (machine.capacidad || 'N/D')}
+              <p className="text-[10px] font-black text-slate-800 truncate">
+                {machine.categoria_tarea === CAT.CAMIONES_VOLTEO
+                  ? (machine.ejes_traseros || 'N/D')
+                  : TRACTOCAMION_SUBTYPES.includes(machine.categoria_tarea)
+                    ? (machine.peso_eje ? `${machine.peso_eje} ton` : 'N/D')
+                    : (machine.capacidad || 'N/D')}
               </p>
             </div>
             <div className="overflow-hidden pl-1">

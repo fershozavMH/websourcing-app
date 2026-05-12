@@ -59,5 +59,5 @@ export interface Machine {
   subtipo_compactadora?: string;
 
   // --- CAMPOS PARA TRACTOCAMIONES ---
-  libras_diferencial?: number;
+  peso_eje?: number;
 }
