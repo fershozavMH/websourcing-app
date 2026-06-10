@@ -39,27 +39,44 @@ const getMachineModel = (m: Machine): string | null => {
   return words[2] ?? null;
 };
 
-export const useMachineFilters = (machines: Machine[]) => {
-  const [searchValue, setSearchValue] = useState('');
-  const [categoryValue, setCategoryValue] = useState('ALL');
-  const [sortValue, setSortValue] = useState<SortOption>('recent');
+export interface InitialFilters {
+  searchValue?: string;
+  sortValue?: SortOption;
+  selectedCountries?: string[];
+  selectedStates?: string[];
+  selectedBrands?: string[];
+  selectedModels?: string[];
+  minYearValue?: string;
+  maxYearValue?: string;
+  minPriceValue?: string;
+  maxPriceValue?: string;
+  minHoursValue?: string;
+  maxHoursValue?: string;
+  minMilesValue?: string;
+  maxMilesValue?: string;
+}
 
-  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
-  const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+export const useMachineFilters = (machines: Machine[], init: InitialFilters = {}) => {
+  const [searchValue, setSearchValue] = useState(init.searchValue ?? '');
+  const [categoryValue, setCategoryValue] = useState('ALL');
+  const [sortValue, setSortValue] = useState<SortOption>(init.sortValue ?? 'recent');
+
+  const [selectedCountries, setSelectedCountries] = useState<string[]>(init.selectedCountries ?? []);
+  const [selectedStates, setSelectedStates] = useState<string[]>(init.selectedStates ?? []);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(init.selectedBrands ?? []);
+  const [selectedModels, setSelectedModels] = useState<string[]>(init.selectedModels ?? []);
   const [selectedEngines, setSelectedEngines] = useState<string[]>([]);
 
-  const [minYearValue, setMinYearValue] = useState('');
-  const [maxYearValue, setMaxYearValue] = useState('');
+  const [minYearValue, setMinYearValue] = useState(init.minYearValue ?? '');
+  const [maxYearValue, setMaxYearValue] = useState(init.maxYearValue ?? '');
   const [minCapacityValue, setMinCapacityValue] = useState('');
   const [maxCapacityValue, setMaxCapacityValue] = useState('');
-  const [minPriceValue, setMinPriceValue] = useState('');
-  const [maxPriceValue, setMaxPriceValue] = useState('');
-  const [minHoursValue, setMinHoursValue] = useState('');
-  const [maxHoursValue, setMaxHoursValue] = useState('');
-  const [minMilesValue, setMinMilesValue] = useState('');
-  const [maxMilesValue, setMaxMilesValue] = useState('');
+  const [minPriceValue, setMinPriceValue] = useState(init.minPriceValue ?? '');
+  const [maxPriceValue, setMaxPriceValue] = useState(init.maxPriceValue ?? '');
+  const [minHoursValue, setMinHoursValue] = useState(init.minHoursValue ?? '');
+  const [maxHoursValue, setMaxHoursValue] = useState(init.maxHoursValue ?? '');
+  const [minMilesValue, setMinMilesValue] = useState(init.minMilesValue ?? '');
+  const [maxMilesValue, setMaxMilesValue] = useState(init.maxMilesValue ?? '');
   const [transmissionValue, setTransmissionValue] = useState('ALL');
 
   const [boomBrandValue, setBoomBrandValue] = useState('');

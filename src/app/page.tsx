@@ -6,12 +6,15 @@ import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Filters from '@/components/Filters';
 import MachineCard from '@/components/MachineCard';
+import MapaTab from '@/components/MapaTab';
 
 import { CATEGORIAS_INICIO } from '@/constants/categories';
 import { TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
+import { USA_STATES } from '@/constants/locations';
 import { useMachines } from '@/hooks/useMachines';
-import { useMachineFilters } from '@/hooks/useMachineFilters';
+import { useMachineFilters, type InitialFilters } from '@/hooks/useMachineFilters';
 import { ITEMS_PER_PAGE } from '@/constants/appConfig';
+import type { SortOption } from '@/types';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -41,6 +44,8 @@ function getPaginationRange(currentPage: number, totalPages: number): (number | 
   return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
 }
 
+const VALID_SORTS: SortOption[] = ['recent', 'price_asc', 'price_desc', 'year_desc'];
+
 function CatalogApp() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -51,10 +56,39 @@ function CatalogApp() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>('AGENCIAS');
+  const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>(
+    (searchParams.get('source') as 'AGENCIAS' | 'FACEBOOK' | 'ALL') || 'AGENCIAS'
+  );
+  const [viewMode, setViewMode] = useState<'catalogo' | 'mapa'>(
+    (searchParams.get('view') as 'catalogo' | 'mapa') || 'catalogo'
+  );
 
-  const { machines, setMachines, loading, lastUpdate, fetchInitialData } = useMachines();
-  const filters = useMachineFilters(machines);
+  // Leer URL una sola vez al montar para inicializar filtros
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const initialFilters = useMemo((): InitialFilters => {
+    const raw = (key: string) => searchParams.get(key) ?? '';
+    const list = (key: string) => searchParams.get(key)?.split('|').filter(Boolean) ?? [];
+    const sort = raw('sort') as SortOption;
+    return {
+      searchValue:       raw('q'),
+      sortValue:         VALID_SORTS.includes(sort) ? sort : 'recent',
+      selectedCountries: searchParams.get('countries')?.split(',').filter(Boolean) ?? [],
+      selectedStates:    list('states'),
+      selectedBrands:    list('brands'),
+      selectedModels:    list('models'),
+      minYearValue:      raw('min_year'),
+      maxYearValue:      raw('max_year'),
+      minPriceValue:     raw('min_price'),
+      maxPriceValue:     raw('max_price'),
+      minHoursValue:     raw('min_hours'),
+      maxHoursValue:     raw('max_hours'),
+      minMilesValue:     raw('min_miles'),
+      maxMilesValue:     raw('max_miles'),
+    };
+  }, []); // [] intencional: la URL inicial es solo el punto de partida, el estado maneja el resto
+
+  const { machines, setMachines, loading, lastUpdate, fetchInitialData, platformCount, categoryCount } = useMachines();
+  const filters = useMachineFilters(machines, initialFilters);
 
   const finalMachines = useMemo(() => {
     return filters.filteredMachines.filter(m => {
@@ -91,6 +125,40 @@ function CatalogApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlCategory, fetchInitialData]);
 
+  // Sincronizar filtros → URL para que sea compartible
+  useEffect(() => {
+    if (!urlCategory) return;
+    const p = new URLSearchParams();
+    p.set('cat', urlCategory);
+    if (dataSource !== 'AGENCIAS')                p.set('source', dataSource);
+    if (viewMode   !== 'catalogo')                p.set('view',   viewMode);
+    if (filters.searchValue)                      p.set('q', filters.searchValue);
+    if (filters.selectedCountries.length > 0)     p.set('countries', filters.selectedCountries.join(','));
+    if (filters.selectedStates.length   > 0)      p.set('states',    filters.selectedStates.join('|'));
+    if (filters.selectedBrands.length   > 0)      p.set('brands',    filters.selectedBrands.join('|'));
+    if (filters.selectedModels.length   > 0)      p.set('models',    filters.selectedModels.join('|'));
+    if (filters.minYearValue)                     p.set('min_year',  filters.minYearValue);
+    if (filters.maxYearValue)                     p.set('max_year',  filters.maxYearValue);
+    if (filters.minPriceValue)                    p.set('min_price', filters.minPriceValue);
+    if (filters.maxPriceValue)                    p.set('max_price', filters.maxPriceValue);
+    if (filters.minHoursValue)                    p.set('min_hours', filters.minHoursValue);
+    if (filters.maxHoursValue)                    p.set('max_hours', filters.maxHoursValue);
+    if (filters.minMilesValue)                    p.set('min_miles', filters.minMilesValue);
+    if (filters.maxMilesValue)                    p.set('max_miles', filters.maxMilesValue);
+    if (filters.sortValue !== 'recent')           p.set('sort', filters.sortValue);
+    router.replace(`/?${p.toString()}`, { scroll: false });
+  }, [
+    urlCategory, dataSource, viewMode,
+    filters.searchValue, filters.selectedCountries, filters.selectedStates,
+    filters.selectedBrands, filters.selectedModels,
+    filters.minYearValue, filters.maxYearValue,
+    filters.minPriceValue, filters.maxPriceValue,
+    filters.minHoursValue, filters.maxHoursValue,
+    filters.minMilesValue, filters.maxMilesValue,
+    filters.sortValue,
+    // router es estable, no genera loops
+  ]);
+
   const handleLogout = async () => { await signOut(auth); router.push('/login'); };
 
   const handleSelectCategory = (catId: string) => {
@@ -99,6 +167,16 @@ function CatalogApp() {
   };
 
   const goHome = () => { router.push('/'); };
+
+  const handleEstadoClick = (estadoNombre: string) => {
+    const entry = USA_STATES.find(s => {
+      const parts = s.split(' - ');
+      return parts[1]?.toLowerCase() === estadoNombre.toLowerCase();
+    });
+    if (entry) filters.onSelectedStatesChange([entry]);
+    filters.onSelectedCountriesChange(['USA']);
+    setViewMode('catalogo');
+  };
 
   const isHomeView = !urlCategory;
 
@@ -134,18 +212,34 @@ function CatalogApp() {
             WebSourcing <span className="text-orange-500">Live</span>
           </button>
 
-          {!isHomeView && (
-            <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-3">
-              <span className="text-slate-300 font-medium hidden md:inline text-sm">Resultados:</span>
+          {!isHomeView && !loading && (
+            <div className="bg-slate-800 px-5 py-2 rounded-lg border border-slate-700 shadow-inner flex items-center gap-2">
               <span className="text-orange-400 font-bold text-lg">
-                {finalMachines.length > 0
-                  ? `${indexOfFirstItem + 1}–${Math.min(indexOfLastItem, finalMachines.length)} de ${finalMachines.length}`
-                  : '0'}
+                {finalMachines.length.toLocaleString()}
+              </span>
+              {finalMachines.length !== machines.length ? (
+                <span className="text-slate-400 text-sm font-medium hidden sm:inline">
+                  de {machines.length.toLocaleString()}
+                </span>
+              ) : categoryCount !== null && categoryCount > machines.length ? (
+                <span className="text-slate-400 text-sm font-medium hidden sm:inline">
+                  de {categoryCount.toLocaleString()}
+                </span>
+              ) : null}
+              <span className="text-slate-500 text-xs font-medium hidden md:inline">
+                {finalMachines.length !== machines.length ? 'resultados' : 'equipos'}
               </span>
             </div>
           )}
 
           <div className="flex items-center gap-4 md:gap-6">
+            <button
+              onClick={() => router.push('/portafolio')}
+              className="text-xs font-bold text-emerald-400 hover:text-white bg-slate-800 hover:bg-emerald-600 px-4 py-2.5 rounded-lg border border-slate-700 transition-colors shadow-sm whitespace-nowrap"
+            >
+              Para Portafolio
+            </button>
+
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">
                 <div className="text-right">
@@ -168,7 +262,12 @@ function CatalogApp() {
         <main className="max-w-6xl mx-auto px-6 mt-12 mb-20 animate-fade-in">
           <div className="text-center mb-16 border-b border-slate-200 pb-6">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-800 mb-2">Inventario de Equipos</h2>
-            <p className="text-slate-500">Selecciona una categoría para explorar el mercado global</p>
+            <p className="text-slate-500">
+              Selecciona una categoría para explorar el mercado global
+              {platformCount !== null && (
+                <> · <span className="text-orange-500 font-bold">{platformCount.toLocaleString()}</span> equipos disponibles</>
+              )}
+            </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-16 gap-x-8">
             {CATEGORIAS_INICIO.map((cat) => (
@@ -182,8 +281,8 @@ function CatalogApp() {
       ) : (
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 mt-6">
 
-          {/* Tabs de fuente de datos */}
-          <div className="flex justify-center md:justify-start mb-6">
+          {/* Barra superior: fuente de datos + toggle de vista */}
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6">
             <div className="bg-slate-200 p-1 rounded-xl inline-flex shadow-inner border border-slate-300 overflow-x-auto">
               <button
                 onClick={() => setDataSource('AGENCIAS')}
@@ -211,8 +310,33 @@ function CatalogApp() {
                 Todo
               </button>
             </div>
+
+            {/* Toggle Catálogo / Mapa */}
+            <div className="bg-slate-200 p-1 rounded-xl inline-flex shadow-inner border border-slate-300 shrink-0">
+              <button
+                onClick={() => setViewMode('catalogo')}
+                className={`px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 ${viewMode === 'catalogo' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                Catálogo
+              </button>
+              <button
+                onClick={() => setViewMode('mapa')}
+                className={`px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 ${viewMode === 'mapa' ? 'bg-white text-slate-800 shadow-md' : 'text-slate-500 hover:text-slate-600'}`}
+              >
+                <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                Mapa
+              </button>
+            </div>
           </div>
 
+          {viewMode === 'mapa' ? (
+            <MapaTab machines={finalMachines} onEstadoClick={handleEstadoClick} />
+          ) : (
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="w-full md:w-64 lg:w-72 shrink-0">
               <Filters
@@ -298,6 +422,7 @@ function CatalogApp() {
               )}
             </main>
           </div>
+          )}
         </div>
       )}
     </div>
