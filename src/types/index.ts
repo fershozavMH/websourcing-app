@@ -60,4 +60,18 @@ export interface Machine {
 
   // --- CAMPOS PARA TRACTOCAMIONES ---
   peso_eje?: number;
+
+  // --- IDENTIFICACIÓN ADICIONAL ---
+  numero_serie?: string;         // Número de serie del equipo (ej: "CAT0320FCNHD10235")
+
+  // --- CAMPOS DE SUBASTA ---
+  precio_maximo?: number;
+  subasta_inicia?: string;   // ISO date string, ej: "2026-06-15"
+  subasta_cierre?: string;   // ISO date string, ej: "2026-06-20"
+
+  // --- CAMPOS DE PORTAFOLIO (generados por la automatización de curación) ---
+  score_oportunidad?: string;      // "LOW" | "MEDIUM" | "HIGH"
+  margen_bruto_estimado?: number;  // Margen estimado en USD
+  aprobado?: boolean;
+  procesado?: boolean;
 }

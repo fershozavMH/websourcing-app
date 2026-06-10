@@ -1,4 +1,5 @@
 export const FIREBASE_COLLECTION = 'maquinaria_aprobada';
+export const PORTAFOLIO_COLLECTION = 'portafolio';
 export const MAX_FETCH_LIMIT = 1000;
 export const ITEMS_PER_PAGE = 24;
 export const CLARITY_TRACKING_ID = 'w9mrnf13o0';
