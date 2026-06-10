@@ -10,7 +10,6 @@ import MapaTab from '@/components/MapaTab';
 
 import { CATEGORIAS_INICIO } from '@/constants/categories';
 import { TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
-import { USA_STATES } from '@/constants/locations';
 import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters, type InitialFilters } from '@/hooks/useMachineFilters';
 import { ITEMS_PER_PAGE } from '@/constants/appConfig';
@@ -98,6 +97,15 @@ function CatalogApp() {
     });
   }, [filters.filteredMachines, dataSource]);
 
+  // For the map: always show full category distribution regardless of state filter
+  const machinesForMap = useMemo(() => {
+    return machines.filter(m => {
+      if (dataSource === 'FACEBOOK' && m.pagina !== 'Facebook Marketplace') return false;
+      if (dataSource === 'AGENCIAS' && m.pagina === 'Facebook Marketplace') return false;
+      return true;
+    });
+  }, [machines, dataSource]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -125,11 +133,17 @@ function CatalogApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlCategory, fetchInitialData]);
 
-  // Sincronizar filtros → URL para que sea compartible
+  // Sincronizar filtros → URL para que sea compartible.
+  // Usa filters.categoryValue (con fallback a urlCategory) para que el cambio de
+  // categoría desde el dropdown no sea sobreescrito por el urlCategory viejo.
   useEffect(() => {
     if (!urlCategory) return;
+    // Cuando el usuario cambia la categoría desde el dropdown, filters.categoryValue ya tiene
+    // el nuevo valor antes de que urlCategory se actualice. Lo usamos para evitar que
+    // router.replace use el urlCategory viejo y sobreescriba el cambio de categoría.
+    const catParam = filters.categoryValue !== 'ALL' ? filters.categoryValue : urlCategory;
     const p = new URLSearchParams();
-    p.set('cat', urlCategory);
+    p.set('cat', catParam);
     if (dataSource !== 'AGENCIAS')                p.set('source', dataSource);
     if (viewMode   !== 'catalogo')                p.set('view',   viewMode);
     if (filters.searchValue)                      p.set('q', filters.searchValue);
@@ -148,7 +162,7 @@ function CatalogApp() {
     if (filters.sortValue !== 'recent')           p.set('sort', filters.sortValue);
     router.replace(`/?${p.toString()}`, { scroll: false });
   }, [
-    urlCategory, dataSource, viewMode,
+    urlCategory, filters.categoryValue, dataSource, viewMode,
     filters.searchValue, filters.selectedCountries, filters.selectedStates,
     filters.selectedBrands, filters.selectedModels,
     filters.minYearValue, filters.maxYearValue,
@@ -168,13 +182,9 @@ function CatalogApp() {
 
   const goHome = () => { router.push('/'); };
 
-  const handleEstadoClick = (estadoNombre: string) => {
-    const entry = USA_STATES.find(s => {
-      const parts = s.split(' - ');
-      return parts[1]?.toLowerCase() === estadoNombre.toLowerCase();
-    });
-    if (entry) filters.onSelectedStatesChange([entry]);
-    filters.onSelectedCountriesChange(['USA']);
+  const handleEstadosApply = (estadosEntries: string[]) => {
+    filters.onSelectedStatesChange(estadosEntries);
+    if (estadosEntries.length > 0) filters.onSelectedCountriesChange(['USA']);
     setViewMode('catalogo');
   };
 
@@ -335,7 +345,7 @@ function CatalogApp() {
           </div>
 
           {viewMode === 'mapa' ? (
-            <MapaTab machines={finalMachines} onEstadoClick={handleEstadoClick} />
+            <MapaTab machines={machinesForMap} selectedEstados={filters.selectedStates} onEstadosApply={handleEstadosApply} />
           ) : (
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="w-full md:w-64 lg:w-72 shrink-0">
@@ -347,8 +357,8 @@ function CatalogApp() {
                 lastUpdate={lastUpdate}
                 onClearAll={filters.resetAllFilters}
                 onCategoryChange={(val: string) => {
+                  filters.setCategoryValue(val);
                   filters.resetAllFilters();
-                  router.push(`/?cat=${encodeURIComponent(val)}`);
                 }}
               />
             </div>

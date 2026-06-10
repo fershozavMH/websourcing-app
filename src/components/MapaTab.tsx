@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { scaleQuantile } from 'd3-scale';
 import type { Machine } from '@/types';
@@ -21,9 +21,15 @@ const STATE_MAPPER: Record<string, string> = {
   'DC': 'District of Columbia',
 };
 
+// Full state name → "XX - Full Name" format used by the filter system
+const FULL_NAME_TO_ENTRY: Record<string, string> = Object.fromEntries(
+  Object.entries(STATE_MAPPER).map(([abbr, full]) => [full, `${abbr} - ${full}`])
+);
+
 interface MapaTabProps {
   machines: Machine[];
-  onEstadoClick?: (estadoNombreCompleto: string) => void;
+  selectedEstados?: string[]; // "TX - Texas" format from parent filter
+  onEstadosApply?: (estados: string[]) => void;
 }
 
 interface EstadoConteo {
@@ -34,14 +40,12 @@ interface EstadoConteo {
 function extractState(ubicacion: string): string {
   const texto = String(ubicacion).toUpperCase().trim();
 
-  // Intenta por sigla (ej. "HOUSTON, TX" o "DALLAS, TX, USA")
   for (const sigla of Object.keys(STATE_MAPPER)) {
     if (new RegExp(`\\b${sigla}\\b`).test(texto)) {
       return STATE_MAPPER[sigla];
     }
   }
 
-  // Fallback: nombre completo del estado
   for (const nombre of Object.values(STATE_MAPPER)) {
     if (texto.includes(nombre.toUpperCase())) {
       return nombre;
@@ -51,8 +55,19 @@ function extractState(ubicacion: string): string {
   return '';
 }
 
-export default function MapaTab({ machines, onEstadoClick }: MapaTabProps) {
-  const [estadoSeleccionado, setEstadoSeleccionado] = useState<{ nombre: string; cant: number } | null>(null);
+export default function MapaTab({ machines, selectedEstados = [], onEstadosApply }: MapaTabProps) {
+  const selectedFullNames = useMemo(
+    () => selectedEstados.map(entry => entry.split(' - ')[1] || entry),
+    [selectedEstados]
+  );
+
+  const [pendingEstados, setPendingEstados] = useState<string[]>(selectedFullNames);
+  const [estadoHover, setEstadoHover] = useState<{ nombre: string; cant: number } | null>(null);
+
+  // Sync when parent applies or clears state filters
+  useEffect(() => {
+    setPendingEstados(selectedFullNames);
+  }, [selectedFullNames]);
 
   const datosEstados = useMemo<EstadoConteo[]>(() => {
     const conteo: Record<string, number> = {};
@@ -70,72 +85,120 @@ export default function MapaTab({ machines, onEstadoClick }: MapaTabProps) {
       .range(['#ffedd5', '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c']);
   }, [datosEstados]);
 
+  const handleGeoClick = (nombre: string, cantidad: number) => {
+    if (cantidad === 0) return;
+    setPendingEstados(prev =>
+      prev.includes(nombre) ? prev.filter(e => e !== nombre) : [...prev, nombre]
+    );
+  };
+
+  const handleApply = () => {
+    const entries = pendingEstados.map(n => FULL_NAME_TO_ENTRY[n]).filter(Boolean);
+    onEstadosApply?.(entries);
+  };
+
   const totalEstados = datosEstados.length;
   const totalMaquinas = machines.length;
 
   return (
     <div className="w-full bg-white border border-slate-200 rounded-xl shadow-sm p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-      {/* Panel izquierdo: métricas */}
-      <div className="lg:col-span-1 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-100 pb-4 lg:pb-0 lg:pr-6">
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-lg font-black text-slate-800">Distribución Geográfica</h3>
-            <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">EE.UU.</p>
-          </div>
+      {/* Panel izquierdo: métricas y selección */}
+      <div className="lg:col-span-1 flex flex-col gap-4 border-b lg:border-b-0 lg:border-r border-slate-100 pb-4 lg:pb-0 lg:pr-6">
+        <div>
+          <h3 className="text-lg font-black text-slate-800">Distribución Geográfica</h3>
+          <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">EE.UU.</p>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
-              <p className="text-2xl font-black text-orange-500">{totalMaquinas}</p>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Equipos</p>
-            </div>
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
-              <p className="text-2xl font-black text-slate-700">{totalEstados}</p>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Estados</p>
-            </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-orange-500">{totalMaquinas}</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Equipos</p>
           </div>
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center">
+            <p className="text-2xl font-black text-slate-700">{totalEstados}</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Estados</p>
+          </div>
+        </div>
 
-          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Estado activo</p>
-            <p className="text-xl font-black text-slate-800 truncate">
-              {estadoSeleccionado ? estadoSeleccionado.nombre : '—'}
+        {/* Hover info */}
+        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Estado activo</p>
+          <p className="text-xl font-black text-slate-800 truncate">
+            {estadoHover ? estadoHover.nombre : '—'}
+          </p>
+          <p className="text-sm font-bold text-orange-500 mt-1">
+            {estadoHover
+              ? `${estadoHover.cant} equipo${estadoHover.cant !== 1 ? 's' : ''}`
+              : 'Pasa el cursor sobre un estado'}
+          </p>
+          {estadoHover && estadoHover.cant > 0 && (
+            <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
+              <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
+              </svg>
+              Clic para {pendingEstados.includes(estadoHover.nombre) ? 'deseleccionar' : 'seleccionar'}
             </p>
-            <p className="text-sm font-bold text-orange-500 mt-1">
-              {estadoSeleccionado
-                ? `${estadoSeleccionado.cant} equipo${estadoSeleccionado.cant !== 1 ? 's' : ''}`
-                : 'Pasa el cursor sobre un estado'}
-            </p>
-            {estadoSeleccionado && estadoSeleccionado.cant > 0 && onEstadoClick && (
-              <p className="text-[10px] text-slate-400 mt-1.5 flex items-center gap-1">
-                <svg className="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" />
-                </svg>
-                Clic para filtrar el catálogo
-              </p>
-            )}
-          </div>
-
-          {/* Top 5 estados */}
-          {datosEstados.length > 0 && (
-            <div>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Top estados</p>
-              <div className="space-y-1.5">
-                {[...datosEstados]
-                  .sort((a, b) => b.cantidad - a.cantidad)
-                  .slice(0, 5)
-                  .map(e => (
-                    <div key={e.id} className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-slate-600 truncate">{e.id}</span>
-                      <span className="font-black text-orange-500 ml-2 shrink-0">{e.cantidad}</span>
-                    </div>
-                  ))}
-              </div>
-            </div>
           )}
         </div>
 
+        {/* Estados seleccionados + botón Aplicar */}
+        <div>
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Estados seleccionados</p>
+          {pendingEstados.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">Haz clic en estados del mapa</p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5">
+              {pendingEstados.map(nombre => (
+                <span
+                  key={nombre}
+                  className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 text-[11px] font-bold px-2.5 py-1 rounded-full border border-orange-200"
+                >
+                  {nombre}
+                  <button
+                    onClick={() => setPendingEstados(prev => prev.filter(e => e !== nombre))}
+                    aria-label={`Quitar ${nombre}`}
+                    className="text-orange-400 hover:text-orange-700 transition-colors ml-0.5"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {pendingEstados.length > 0 && (
+            <button
+              onClick={handleApply}
+              className="mt-3 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-sm transition-colors shadow-md shadow-orange-500/20"
+            >
+              Aplicar {pendingEstados.length === 1 ? 'filtro' : `filtros (${pendingEstados.length})`}
+            </button>
+          )}
+        </div>
+
+        {/* Top 5 estados */}
+        {datosEstados.length > 0 && (
+          <div>
+            <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Top estados</p>
+            <div className="space-y-1.5">
+              {[...datosEstados]
+                .sort((a, b) => b.cantidad - a.cantidad)
+                .slice(0, 5)
+                .map(e => (
+                  <div key={e.id} className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-slate-600 truncate">{e.id}</span>
+                    <span className="font-black text-orange-500 ml-2 shrink-0">{e.cantidad}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
         {/* Leyenda */}
-        <div className="mt-4">
+        <div className="mt-auto">
           <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-1.5">Densidad</p>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500">
             <span>Menos</span>
@@ -167,24 +230,38 @@ export default function MapaTab({ machines, onEstadoClick }: MapaTabProps) {
                   const nombre = geo.properties.name as string;
                   const datos = datosEstados.find(d => d.id === nombre);
                   const cantidad = datos?.cantidad ?? 0;
-                  const activo = estadoSeleccionado?.nombre === nombre;
+                  const isSelected = pendingEstados.includes(nombre);
+                  const isHovered = estadoHover?.nombre === nombre;
+
+                  const fill = isSelected
+                    ? '#f97316'
+                    : cantidad > 0
+                      ? colorScale(cantidad)
+                      : '#f8fafc';
+
+                  const stroke = isSelected ? '#ea580c' : isHovered ? '#fb923c' : '#cbd5e1';
+                  const strokeWidth = isSelected ? 2 : isHovered ? 1.2 : 0.6;
 
                   return (
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
-                      fill={cantidad > 0 ? colorScale(cantidad) : '#f8fafc'}
-                      stroke={activo ? '#f97316' : '#cbd5e1'}
-                      strokeWidth={activo ? 1.5 : 0.6}
+                      fill={fill}
+                      stroke={stroke}
+                      strokeWidth={strokeWidth}
                       className="transition-all duration-150 outline-none"
                       style={{
                         default: { outline: 'none' },
-                        hover:   { outline: 'none', cursor: 'pointer', fill: cantidad > 0 ? '#f97316' : '#e2e8f0' },
+                        hover: {
+                          outline: 'none',
+                          cursor: cantidad > 0 ? 'pointer' : 'default',
+                          fill: isSelected ? '#ea580c' : cantidad > 0 ? '#f97316' : '#e2e8f0',
+                        },
                         pressed: { outline: 'none' },
                       }}
-                      onMouseEnter={() => setEstadoSeleccionado({ nombre, cant: cantidad })}
-                      onMouseLeave={() => setEstadoSeleccionado(null)}
-                      onClick={() => cantidad > 0 && onEstadoClick?.(nombre)}
+                      onMouseEnter={() => setEstadoHover({ nombre, cant: cantidad })}
+                      onMouseLeave={() => setEstadoHover(null)}
+                      onClick={() => handleGeoClick(nombre, cantidad)}
                     />
                   );
                 })
