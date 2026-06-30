@@ -1,15 +1,13 @@
 import { useState, useMemo } from 'react';
 import type { Machine, SortOption } from '@/types';
-import { CAT, TRUCK_CATEGORIES, CHASSIS_FILTER_CATEGORIES, TRACTOCAMION_SUBTYPES, normalizeCategory } from '@/constants/machineCategories';
+import { CAT, TRUCK_CATEGORIES, CHASSIS_FILTER_CATEGORIES, TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { AVAILABLE_COUNTRIES } from '@/constants/locations';
 import { TRACCIONES, EJES_TRASEROS } from '@/constants/vehicleSpecs';
 
 const matchesCategory = (machineCat: string, selectedCat: string): boolean => {
   if (selectedCat === CAT.ALL) return true;
-  const normalized = normalizeCategory(selectedCat);
-  if (normalized === CAT.TRACTOCAMIONES) return TRACTOCAMION_SUBTYPES.includes(machineCat);
-  if (normalized === CAT.ROUGH_TERRAIN_DB) return machineCat === CAT.ROUGH_TERRAIN_DB;
-  return machineCat === normalized;
+  if (selectedCat === CAT.TRACTOCAMIONES) return TRACTOCAMION_SUBTYPES.includes(machineCat);
+  return machineCat === selectedCat;
 };
 
 const getMachineBrand = (m: Machine): string => {
@@ -170,8 +168,6 @@ export const useMachineFilters = (machines: Machine[], init: InitialFilters = {}
         if (!generalText.includes(term)) return false;
       }
 
-      const normalizedCategory = normalizeCategory(categoryValue);
-
       if (!matchesCategory(m.categoria_tarea, categoryValue)) return false;
 
       const loc = (m.ubicacion || '').toLowerCase();
@@ -289,15 +285,7 @@ export const useMachineFilters = (machines: Machine[], init: InitialFilters = {}
         }
       }
 
-      if (normalizeCategory(categoryValue) === CAT.ROUGH_TERRAIN_DB) {
-        if (categoryValue === CAT.ROUGH_TERRAIN) {
-          const subtipoBD = (m.subtipo_grua_terreno || m.origen_tarea || '').toUpperCase();
-          if (!subtipoBD.includes('ROUGH TERRAIN')) return false;
-        } else if (categoryValue === CAT.ALL_TERRAIN) {
-          const subtipoBD = (m.subtipo_grua_terreno || m.origen_tarea || '').toUpperCase();
-          if (!subtipoBD.includes('ALL TERRAIN')) return false;
-        }
-
+      if (categoryValue === CAT.ROUGH_TERRAIN || categoryValue === CAT.ALL_TERRAIN) {
         if (minAlcanceValue || maxAlcanceValue) {
           const minA = minAlcanceValue ? parseInt(minAlcanceValue) : 0;
           const maxA = maxAlcanceValue ? parseInt(maxAlcanceValue) : Infinity;
@@ -306,7 +294,7 @@ export const useMachineFilters = (machines: Machine[], init: InitialFilters = {}
       }
 
       // --- FILTROS DE COMPACTADORAS ---
-      if (normalizedCategory === CAT.COMPACTADORAS) {
+      if (categoryValue === CAT.COMPACTADORAS) {
         if (reqSubtipoCompactadora !== 'ALL') {
           const subtipoBD = (m.subtipo_compactadora || '').toLowerCase();
           if (subtipoBD !== reqSubtipoCompactadora.toLowerCase()) return false;

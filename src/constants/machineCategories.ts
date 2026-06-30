@@ -16,7 +16,6 @@ export const CAT = {
   ELEVADORES: 'Elevadores',
   ROUGH_TERRAIN: 'Rough Terrain',
   ALL_TERRAIN: 'All Terrain',
-  ROUGH_TERRAIN_DB: 'rough_terrain',
   COMPACTADORAS: 'Compactadoras',
   ALL: 'ALL',
 } as const;
@@ -52,7 +51,8 @@ export const TRUCK_CATEGORIES: ReadonlyArray<string> = [
 export const CRANE_CATEGORIES: ReadonlyArray<string> = [
   CAT.GRUAS_TITANES,
   CAT.GRUAS_ARTICULADAS,
-  CAT.ROUGH_TERRAIN_DB,
+  CAT.ROUGH_TERRAIN,
+  CAT.ALL_TERRAIN,
 ];
 
 export const CHASSIS_FILTER_CATEGORIES: ReadonlyArray<string> = [
@@ -60,5 +60,4 @@ export const CHASSIS_FILTER_CATEGORIES: ReadonlyArray<string> = [
   CAT.CAMIONES_VOLTEO,
 ];
 
-export const normalizeCategory = (cat: string): string =>
-  cat === CAT.ROUGH_TERRAIN || cat === CAT.ALL_TERRAIN ? CAT.ROUGH_TERRAIN_DB : cat;
+export const normalizeCategory = (cat: string): string => cat;
