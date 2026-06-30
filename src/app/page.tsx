@@ -160,7 +160,9 @@ function CatalogApp() {
     if (filters.minMilesValue)                    p.set('min_miles', filters.minMilesValue);
     if (filters.maxMilesValue)                    p.set('max_miles', filters.maxMilesValue);
     if (filters.sortValue !== 'recent')           p.set('sort', filters.sortValue);
-    router.replace(`/?${p.toString()}`, { scroll: false });
+    if (window.location.search !== `?${p.toString()}`) {
+      router.replace(`/?${p.toString()}`, { scroll: false });
+    }
   }, [
     urlCategory, filters.categoryValue, dataSource, viewMode,
     filters.searchValue, filters.selectedCountries, filters.selectedStates,
