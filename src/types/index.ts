@@ -75,3 +75,26 @@ export interface Machine {
   aprobado?: boolean;
   procesado?: boolean;
 }
+
+export interface Subasta {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  marca?: string;
+  modelo?: string;
+  año?: number;
+  categoria?: string;
+  lote?: string;
+  fuente?: string;
+  estado?: string;           // "proxima" | "activa" | "cerrada"
+  tipo_subasta?: string;     // "live" | "online"
+  fecha_subasta?: any;       // Firestore Timestamp
+  imagenes?: string[];
+  puja_inicial?: number;
+  puja_actual?: number;
+  ubicacion?: string;
+  url?: string;
+  specs_extra?: Record<string, string>;
+  scraped_at?: any;
+  en_calendario?: boolean;
+}
