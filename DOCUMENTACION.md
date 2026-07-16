@@ -1,8 +1,8 @@
 # WebSourcing App — Documentación del Proyecto
 
 **Machinery Hunters | Plataforma de Inteligencia de Adquisición de Maquinaria**
-**Versión actual:** MVP (en producción) — rama `refactor` activa
-**Última actualización:** Junio 2026
+**Versión actual:** MVP (en producción) — rama `portafolio` activa
+**Última actualización:** 16 de julio de 2026
 
 ---
 
@@ -165,11 +165,15 @@ websourcing-app/
 │   │   │   └── page.tsx            # Página de autenticación
 │   │   ├── portafolio/
 │   │   │   └── page.tsx            # Vista de portafolio curado (colección "portafolio")
+│   │   ├── subastas/
+│   │   │   └── page.tsx            # Vista de subastas (colección "subastas") con lista/calendario
 │   │   └── api/
 │   │       └── erp/
 │   │           └── route.ts        # API Route: envío al ERP Frappe
 │   ├── components/
 │   │   ├── MachineCard.tsx         # Tarjeta de maquinaria individual
+│   │   ├── SubastaCard.tsx         # Tarjeta de subasta individual (con toggle "al calendario")
+│   │   ├── CalendarioSubastas.tsx  # Vista de calendario mensual de subastas marcadas
 │   │   ├── Filters.tsx             # Sidebar de filtros orquestador
 │   │   └── filters/                # Subcomponentes de filtros por categoría
 │   │       ├── MultiSelectModal.tsx    # Modal reutilizable de selección múltiple
@@ -290,6 +294,33 @@ interface Machine {
 }
 ```
 
+### Colección Firestore: `subastas`
+
+```typescript
+interface Subasta {
+  id: string
+  titulo: string
+  descripcion?: string
+  marca?: string
+  modelo?: string
+  año?: number
+  categoria?: string
+  lote?: string                 // Número de lote de la subasta
+  fuente?: string                // Sitio de origen (Ritchie Bros, IronPlanet, etc.)
+  estado?: string                // "proxima" | "activa" | "cerrada"
+  tipo_subasta?: string          // "live" | "online"
+  fecha_subasta?: any            // Firestore Timestamp
+  imagenes?: string[]
+  puja_inicial?: number
+  puja_actual?: number
+  ubicacion?: string
+  url?: string                   // Link a la publicación original
+  specs_extra?: Record<string, string>
+  scraped_at?: any
+  en_calendario?: boolean        // Marca del usuario para verla en la vista de calendario
+}
+```
+
 ### Categorías soportadas (18)
 
 | Firestore `categoria_tarea` | UI (pantalla home) | ERP `custom_categoria_equipo` | Tipo |
@@ -403,6 +434,17 @@ interface Machine {
 - Filtros disponibles: búsqueda por texto, filtro de categoría (dinámico según los datos), ordenamiento.
 - Campos exclusivos del portafolio: `score_oportunidad` (LOW/MEDIUM/HIGH), `margen_bruto_estimado`, `aprobado`, `procesado`.
 - Los documentos son generados por una automatización de curación externa (aún en desarrollo); la colección puede estar vacía hasta que esa automatización esté activa.
+
+### 9.10 Subastas (`/subastas`)
+- Vista independiente accesible desde el navbar del dashboard principal (botón "Subastas").
+- Lee la colección `subastas` de Firestore (constante `SUBASTAS_COLLECTION`).
+- Dos modos de visualización, alternables con un toggle:
+  - **Lista**: grid de tarjetas (`SubastaCard`) con paginación (24 por página, reutiliza `ITEMS_PER_PAGE`).
+  - **Calendario**: vista mensual (`CalendarioSubastas`) que ubica cada subasta marcada en el día de `fecha_subasta`, con navegación mes anterior/siguiente y botón "Hoy".
+- Filtros: búsqueda por texto (título, marca, modelo, ubicación, descripción), estado (Próxima/Activa/Cerrada), categoría, fuente, y checkbox "Solo en calendario".
+- **Marcar al calendario**: cada tarjeta tiene un botón que hace toggle del campo `en_calendario` en Firestore (`updateDoc` directo desde el cliente) con actualización optimista y reversión si falla.
+- El listado se ordena por `fecha_subasta` ascendente en el cliente tras la carga.
+- Los documentos son generados por el scraper (aún no confirmado si es el mismo scraper de maquinaria u otro separado); la colección puede estar vacía si el scraper no ha corrido.
 
 ---
 
@@ -600,19 +642,21 @@ La aplicación está configurada para despliegue en **Vercel**.
 | Skeleton loading | En dashboard y portafolio |
 | Refactorización de constantes | `categories.tsx`, `locations.ts`, `vehicleSpecs.ts`, `machineCategories.ts`, `appConfig.ts` |
 | Página Portafolio (`/portafolio`) | Vista de colección `portafolio` con normalización de docs tipo ERP |
+| Página Subastas (`/subastas`) | Vista lista + calendario de colección `subastas`; toggle "al calendario" por tarjeta; filtros de estado/categoría/fuente/búsqueda |
 
-### 🔄 En progreso (rama `refactor`)
+### 🔄 En progreso (rama `portafolio`)
 
 | Tarea | Estado | Notas |
 |---|---|---|
-| Refinamiento de filtros tractocamiones | Cambios pendientes de commit | `src/app/page.tsx`, `src/components/MachineCard.tsx`, `src/constants/appConfig.ts`, `src/types/index.ts` con modificaciones sin commitear |
+| Subastas — alimentación de datos | UI lista; pendiente confirmar fuente del scraper | La colección `subastas` y la vista lista/calendario están listas; falta confirmar qué proceso puebla `subastas` de forma continua |
 | Portafolio — automatización de curación | Estructura lista; pendiente de automatización externa | La colección `portafolio` y la UI están listas; falta el proceso que genere los documentos con `score_oportunidad` y `margen_bruto_estimado` |
 
 ### ⏳ Pendiente
 
 | Tarea | Notas |
 |---|---|
-| Merge rama `refactor` → `main` | Cuando se estabilicen los cambios actuales |
+| Merge rama `portafolio` → `main` | Cuando se estabilicen los cambios actuales |
+| Subastas — reglas de seguridad Firestore | Confirmar que la colección `subastas` permita lectura a usuarios autenticados y escritura del campo `en_calendario` desde el cliente |
 | Fechas de subasta en scraper | `subasta_inicia` y `subasta_cierre` ya están en el modelo; falta que el scraper las capture |
 | ERP → GoHighLevel CRM | Definir webhook o API de sincronización |
 | Página Web MVP → WebSourcing / ERP | Flujo de demanda de cliente → tarea de sourcing |
@@ -670,7 +714,8 @@ La aplicación está configurada para despliegue en **Vercel**.
 |---|---|---|---|
 | `maquinaria_aprobada` | Scraper Python (service account) + API Route /api/erp | WebSourcing App (client SDK) | Maquinaria scrapeada y procesada; fuente principal del dashboard |
 | `portafolio` | Automatización de curación (externa) | WebSourcing App (client SDK) | Equipos curados con score de oportunidad y margen estimado |
+| `subastas` | Scraper (externo) + WebSourcing App (campo `en_calendario`, client SDK) | WebSourcing App (client SDK) | Subastas próximas/activas/cerradas; el usuario marca cuáles seguir en el calendario |
 
 ---
 
-*Última actualización: Junio 2026. Rama activa: `refactor`. Mantener actualizado conforme evolucionen las integraciones entre plataformas.*
+*Última actualización: 16 de julio de 2026. Rama activa: `portafolio`. Mantener actualizado conforme evolucionen las integraciones entre plataformas.*
