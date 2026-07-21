@@ -8,6 +8,9 @@ import { auth, db } from '@/lib/firebase';
 import MachineCard from '@/components/MachineCard';
 import type { Machine } from '@/types';
 import { PORTAFOLIO_COLLECTION, ITEMS_PER_PAGE, MAX_FETCH_LIMIT } from '@/constants/appConfig';
+import { logActivity, logError } from '@/lib/logger';
+import { LOG_CODES } from '@/constants/logCodes';
+import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -90,6 +93,7 @@ export default function PortafolioPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
 
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);
@@ -129,6 +133,7 @@ export default function PortafolioPage() {
         setMachines(normalized);
       } catch (err: any) {
         console.error('[Portafolio] Error al cargar:', err);
+        logError(LOG_CODES.ERR_PORTAFOLIO_LOAD, err?.message ?? 'Error al cargar portafolio', { stack: err?.stack });
         setFetchError(err?.message ?? 'Error desconocido');
       } finally {
         setLoading(false);
@@ -180,7 +185,7 @@ export default function PortafolioPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleLogout = async () => { await signOut(auth); router.push('/login'); };
+  const handleLogout = async () => { logActivity(LOG_CODES.ACT_LOGOUT, 'Cierre de sesión'); await signOut(auth); router.push('/login'); };
 
   if (authChecking) return (
     <div className="min-h-screen bg-slate-900 flex justify-center items-center">
@@ -226,6 +231,14 @@ export default function PortafolioPage() {
             >
               ← Sourcing
             </button>
+            {hasMonitoreoAccess && (
+              <button
+                onClick={() => router.push('/monitoreo')}
+                className="text-xs font-bold text-red-400 hover:text-white bg-slate-800 hover:bg-red-600 px-4 py-2.5 rounded-lg border border-slate-700 transition-colors shadow-sm whitespace-nowrap"
+              >
+                Monitoreo
+              </button>
+            )}
 
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { logActivity, logSecurity } from '@/lib/logger';
+import { LOG_CODES } from '@/constants/logCodes';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,8 +21,13 @@ export default function LoginPage() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      logActivity(LOG_CODES.ACT_LOGIN, `Inicio de sesión exitoso`, { userEmail: email });
       router.push('/'); // Redirige al dashboard principal después del login exitoso
     } catch {
+      logSecurity(LOG_CODES.SEC_LOGIN_FAILED, 'Intento de login fallido', {
+        userEmail: email,
+        metadata: { attemptedEmail: email },
+      });
       setError('Credenciales incorrectas o usuario no autorizado.');
     } finally {
       setLoading(false);

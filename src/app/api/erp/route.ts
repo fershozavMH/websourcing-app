@@ -1,6 +1,8 @@
 import '@/lib/firebase-admin';
 import { NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
+import { writeLog } from '@/lib/monitoreo/writeLog';
+import { LOG_CODES } from '@/constants/logCodes';
 
 // Credenciales de Frappe por usuario (email → api_key / api_secret)
 // Fallback: ERP_API_KEY / ERP_API_SECRET (admin) cuando el usuario no tiene credenciales propias
@@ -138,6 +140,15 @@ export async function POST(request: Request) {
     }
     if (!userCreds?.key) {
       console.warn(`Sin credenciales ERP para "${userEmail || 'usuario desconocido'}" — usando credenciales admin`);
+      await writeLog({
+        level: 'error',
+        category: 'error',
+        code: LOG_CODES.ERR_ERP_CREDENTIALS_MISSING,
+        message: `Sin credenciales ERP propias para "${userEmail || 'usuario desconocido'}", se usaron credenciales admin`,
+        source: 'server',
+        route: '/api/erp',
+        userEmail,
+      });
     }
 
     // Verificar si ya existe en Frappe (evita duplicados)
@@ -360,9 +371,31 @@ ENVIADO POR: ${usuarioSourcing}`;
           fecha_envio_erp: new Date().toISOString(),
         });
       }
-    } catch (fbError) {
+    } catch (fbError: any) {
       console.warn('La máquina se envió al ERP, pero falló la actualización en Firebase:', fbError);
+      await writeLog({
+        level: 'error',
+        category: 'error',
+        code: LOG_CODES.ERR_ERP_TRACE_UPDATE_FAILED,
+        message: fbError?.message ?? 'Falló la actualización de trazabilidad en Firebase tras enviar al ERP',
+        stack: fbError?.stack,
+        source: 'server',
+        route: '/api/erp',
+        userEmail,
+        metadata: { machineId: maquina.id, idFrappe },
+      });
     }
+
+    await writeLog({
+      level: 'info',
+      category: 'activity',
+      code: LOG_CODES.ACT_SEND_ERP,
+      message: `Máquina enviada al ERP por ${usuarioSourcing}`,
+      source: 'server',
+      route: '/api/erp',
+      userEmail,
+      metadata: { machineId: maquina.id, idFrappe },
+    });
 
     return NextResponse.json({
       success: true,
@@ -371,6 +404,15 @@ ENVIADO POR: ${usuarioSourcing}`;
     });
 
   } catch (error: any) {
+    await writeLog({
+      level: 'error',
+      category: 'error',
+      code: LOG_CODES.ERR_ERP_SEND,
+      message: error?.message ?? 'Error al enviar máquina al ERP',
+      stack: error?.stack,
+      source: 'server',
+      route: '/api/erp',
+    });
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

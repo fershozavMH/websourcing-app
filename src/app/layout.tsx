@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { CLARITY_TRACKING_ID } from "@/constants/appConfig";
+import MonitoringInit from "@/components/monitoreo/MonitoringInit";
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -23,6 +24,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
+        <MonitoringInit />
         {children}
 
         {/* ================= MICROSOFT CLARITY ================= */}
