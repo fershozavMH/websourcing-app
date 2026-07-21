@@ -5,6 +5,8 @@ import { getAuth } from 'firebase/auth';
 import type { Machine } from '@/types';
 import { CAT, YELLOW_CATEGORIES, TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { CURRENCY_LOCALE, CURRENCY, BADGE_COLOR } from '@/constants/appConfig';
+import { logError } from '@/lib/logger';
+import { LOG_CODES } from '@/constants/logCodes';
 
 export default function MachineCard({ machine }: { machine: Machine }) {
   const [imgIndex, setImgIndex] = useState(0);
@@ -90,8 +92,12 @@ export default function MachineCard({ machine }: { machine: Machine }) {
       } else {
         alert(`Error al enviar: ${data.error}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
+      logError(LOG_CODES.ERR_ERP_SEND, error?.message ?? 'Error de conexión al enviar máquina al ERP', {
+        stack: error?.stack,
+        metadata: { machineId: machine.id },
+      });
       alert('Hubo un problema de conexión con el servidor.');
     } finally {
       setEnviando(false);

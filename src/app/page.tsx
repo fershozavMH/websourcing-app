@@ -12,8 +12,11 @@ import { CATEGORIAS_INICIO } from '@/constants/categories';
 import { TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters, type InitialFilters } from '@/hooks/useMachineFilters';
+import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
 import { ITEMS_PER_PAGE } from '@/constants/appConfig';
 import type { SortOption } from '@/types';
+import { logActivity } from '@/lib/logger';
+import { LOG_CODES } from '@/constants/logCodes';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -53,6 +56,7 @@ function CatalogApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>(
@@ -175,7 +179,7 @@ function CatalogApp() {
     // router es estable, no genera loops
   ]);
 
-  const handleLogout = async () => { await signOut(auth); router.push('/login'); };
+  const handleLogout = async () => { logActivity(LOG_CODES.ACT_LOGOUT, 'Cierre de sesión'); await signOut(auth); router.push('/login'); };
 
   const handleSelectCategory = (catId: string) => {
     filters.resetAllFilters();
@@ -257,6 +261,14 @@ function CatalogApp() {
             >
               Para Portafolio
             </button>
+            {hasMonitoreoAccess && (
+              <button
+                onClick={() => router.push('/monitoreo')}
+                className="text-xs font-bold text-red-400 hover:text-white bg-slate-800 hover:bg-red-600 px-4 py-2.5 rounded-lg border border-slate-700 transition-colors shadow-sm whitespace-nowrap"
+              >
+                Monitoreo
+              </button>
+            )}
 
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">

@@ -9,6 +9,9 @@ import SubastaCard from '@/components/SubastaCard';
 import CalendarioSubastas from '@/components/CalendarioSubastas';
 import type { Subasta } from '@/types';
 import { SUBASTAS_COLLECTION, MAX_FETCH_LIMIT, ITEMS_PER_PAGE } from '@/constants/appConfig';
+import { logActivity } from '@/lib/logger';
+import { LOG_CODES } from '@/constants/logCodes';
+import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -44,6 +47,7 @@ export default function SubastasPage() {
   const [authChecking, setAuthChecking]   = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser]     = useState<User | null>(null);
+  const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
 
   const [subastas, setSubastas]           = useState<Subasta[]>([]);
   const [loading, setLoading]             = useState(false);
@@ -133,7 +137,7 @@ export default function SubastasPage() {
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const currentItems = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
-  const handleLogout = async () => { await signOut(auth); router.push('/login'); };
+  const handleLogout = async () => { logActivity(LOG_CODES.ACT_LOGOUT, 'Cierre de sesión'); await signOut(auth); router.push('/login'); };
 
   if (authChecking) return (
     <div className="min-h-screen bg-slate-900 flex justify-center items-center">
@@ -183,6 +187,14 @@ export default function SubastasPage() {
             >
               ← Sourcing
             </button>
+            {hasMonitoreoAccess && (
+              <button
+                onClick={() => router.push('/monitoreo')}
+                className="text-xs font-bold text-red-400 hover:text-white bg-slate-800 hover:bg-red-600 px-4 py-2.5 rounded-lg border border-slate-700 transition-colors shadow-sm whitespace-nowrap"
+              >
+                Monitoreo
+              </button>
+            )}
 
             {currentUser && (
               <div className="hidden sm:flex items-center gap-3">

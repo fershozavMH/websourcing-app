@@ -4,6 +4,8 @@ import { db } from '@/lib/firebase';
 import type { Machine } from '@/types';
 import { CAT, normalizeCategory, TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { FIREBASE_COLLECTION, MAX_FETCH_LIMIT } from '@/constants/appConfig';
+import { logError } from '@/lib/logger';
+import { LOG_CODES } from '@/constants/logCodes';
 
 export const useMachines = () => {
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -48,8 +50,11 @@ export const useMachines = () => {
       setMachines(newMachines);
       setCategoryCount(countSnap.data().count);
       setLastUpdate(new Date());
-    } catch {
-      // fetch fallido — el estado queda vacío, la UI ya maneja este caso
+    } catch (err: any) {
+      logError(LOG_CODES.ERR_FETCH_MACHINES, err?.message ?? 'Error al obtener máquinas', {
+        stack: err?.stack,
+        metadata: { categoryToFetch },
+      });
     } finally {
       setLoading(false);
     }
