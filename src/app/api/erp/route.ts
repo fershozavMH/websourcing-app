@@ -63,6 +63,16 @@ const normalizarTransmision = (transmision: string): string => {
   return '';
 };
 
+// Normaliza el tipo de pluma → "Z" | "Roll and Fold" | "" (únicos valores que acepta el Select en Frappe)
+const normalizarTipoPluma = (tipoPluma: string): string => {
+  if (!tipoPluma) return '';
+  const t = tipoPluma.toUpperCase();
+  const esRollAndFold = ['ROLL AND FOLD', 'ROLL-FOLD', 'ROLL & FOLD', 'RZ'].some(k => t.includes(k));
+  if (esRollAndFold) return 'Roll and Fold';
+  if (t.includes('Z')) return 'Z';
+  return '';
+};
+
 // Extrae la marca de la pluma del título de una Bomba de Concreto
 const extractMarcaBomba = (titulo: string): string => {
   const upper = titulo.toUpperCase();
@@ -313,7 +323,7 @@ ENVIADO POR: ${usuarioSourcing}`;
       extension:                           maquina.tiene_extension ? 1 : 0,
       cabina:                              maquina.tiene_cabina    ? 1 : 0,
       ...(horasPrincipales > 0 && { horas: horasPrincipales }),
-      tipo_de_pluma:                       maquina.tipo_pluma || '',
+      tipo_de_pluma:                       normalizarTipoPluma(maquina.tipo_pluma || ''),
       ripper:                              maquina.tiene_ripper ? 1 : 0,
       custom_territory:                    territorio,
       ciudad:                              ciudad,

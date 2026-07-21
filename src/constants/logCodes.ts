@@ -21,6 +21,7 @@ export const LOG_CODES = {
   ACT_LOGIN: 'ACT_LOGIN',
   ACT_LOGOUT: 'ACT_LOGOUT',
   ACT_SEND_ERP: 'ACT_SEND_ERP',
+  ACT_SESSION_TIMEOUT: 'ACT_SESSION_TIMEOUT',
 } as const;
 
 export type LogCode = (typeof LOG_CODES)[keyof typeof LOG_CODES];
@@ -39,6 +40,7 @@ export const LOG_CODE_TO_CATEGORY: Record<LogCode, LogCategory> = {
   ACT_LOGIN: 'activity',
   ACT_LOGOUT: 'activity',
   ACT_SEND_ERP: 'activity',
+  ACT_SESSION_TIMEOUT: 'activity',
 };
 
 export function isKnownLogCode(code: string): code is LogCode {
