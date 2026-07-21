@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import ErroresSeguridadTab from './ErroresSeguridadTab';
 import ActividadUsuariosTab from './ActividadUsuariosTab';
 import AdminsPanel from './AdminsPanel';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 
 type AccessState = 'checking' | 'denied' | 'granted';
 
@@ -16,6 +17,7 @@ export default function MonitoreoPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [access, setAccess] = useState<AccessState>('checking');
   const [tab, setTab] = useState<'errores' | 'actividad'>('errores');
+  useInactivityLogout(access === 'granted');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

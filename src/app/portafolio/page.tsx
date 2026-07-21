@@ -11,6 +11,7 @@ import { PORTAFOLIO_COLLECTION, ITEMS_PER_PAGE, MAX_FETCH_LIMIT } from '@/consta
 import { logActivity, logError } from '@/lib/logger';
 import { LOG_CODES } from '@/constants/logCodes';
 import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -94,6 +95,7 @@ export default function PortafolioPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
+  useInactivityLogout(isAuthenticated);
 
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);

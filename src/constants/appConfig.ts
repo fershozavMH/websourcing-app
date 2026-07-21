@@ -7,3 +7,4 @@ export const CLARITY_TRACKING_ID = 'w9mrnf13o0';
 export const CURRENCY_LOCALE = 'en-US';
 export const CURRENCY = 'USD';
 export const BADGE_COLOR = '#1b2b4d';
+export const INACTIVITY_LOGOUT_MS = 4 * 60 * 60 * 1000; // 4 horas
