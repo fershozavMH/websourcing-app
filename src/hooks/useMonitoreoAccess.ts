@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
 
-// Self-check contra /api/monitoreo/admins: un 200 confirma que el correo
-// está en monitoreo_admins. Se usa solo para decidir si mostrar el botón de
-// navegación — la ruta /monitoreo hace su propia verificación de acceso.
+// Self-check contra /api/monitoreo/access: no registra nada, se usa solo
+// para decidir si mostrar el botón de navegación — la ruta /monitoreo hace
+// su propia verificación de acceso.
 export function useMonitoreoAccess(currentUser: User | null): boolean {
   const [hasAccess, setHasAccess] = useState(false);
 
@@ -17,10 +17,11 @@ export function useMonitoreoAccess(currentUser: User | null): boolean {
       }
       try {
         const token = await currentUser.getIdToken();
-        const res = await fetch('/api/monitoreo/admins', {
+        const res = await fetch('/api/monitoreo/access', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!cancelled) setHasAccess(res.ok);
+        const data = await res.json().catch(() => null);
+        if (!cancelled) setHasAccess(Boolean(data?.hasAccess));
       } catch {
         if (!cancelled) setHasAccess(false);
       }

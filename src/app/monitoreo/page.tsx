@@ -32,6 +32,10 @@ export default function MonitoreoPage() {
   useEffect(() => {
     if (!currentUser) return;
     (async () => {
+      // A diferencia del chequeo silencioso que decide si mostrar el botón de
+      // navegación (useMonitoreoAccess), llegar a esta página es un acto
+      // deliberado: si se deniega, sí vale la pena registrarlo como evento
+      // de seguridad — por eso aquí se usa /api/monitoreo/admins (que sí registra).
       const token = await currentUser.getIdToken();
       const res = await fetch('/api/monitoreo/admins', {
         headers: { Authorization: `Bearer ${token}` },
