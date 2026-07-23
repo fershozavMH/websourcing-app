@@ -12,6 +12,11 @@ import { CATEGORIAS_INICIO } from '@/constants/categories';
 import { TRACTOCAMION_SUBTYPES } from '@/constants/machineCategories';
 import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters, type InitialFilters } from '@/hooks/useMachineFilters';
+<<<<<<< Updated upstream
+=======
+import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+>>>>>>> Stashed changes
 import { ITEMS_PER_PAGE } from '@/constants/appConfig';
 import type { SortOption } from '@/types';
 
@@ -53,6 +58,11 @@ function CatalogApp() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+<<<<<<< Updated upstream
+=======
+  const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
+  useInactivityLogout(isAuthenticated);
+>>>>>>> Stashed changes
 
   const [currentPage, setCurrentPage] = useState(1);
   const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>(
