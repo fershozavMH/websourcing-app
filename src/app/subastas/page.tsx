@@ -9,13 +9,6 @@ import SubastaCard from '@/components/SubastaCard';
 import CalendarioSubastas from '@/components/CalendarioSubastas';
 import type { Subasta } from '@/types';
 import { SUBASTAS_COLLECTION, MAX_FETCH_LIMIT, ITEMS_PER_PAGE } from '@/constants/appConfig';
-<<<<<<< Updated upstream
-=======
-import { logActivity } from '@/lib/logger';
-import { LOG_CODES } from '@/constants/logCodes';
-import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
-import { useInactivityLogout } from '@/hooks/useInactivityLogout';
->>>>>>> Stashed changes
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -51,11 +44,6 @@ export default function SubastasPage() {
   const [authChecking, setAuthChecking]   = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser]     = useState<User | null>(null);
-<<<<<<< Updated upstream
-=======
-  const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
-  useInactivityLogout(isAuthenticated);
->>>>>>> Stashed changes
 
   const [subastas, setSubastas]           = useState<Subasta[]>([]);
   const [loading, setLoading]             = useState(false);

@@ -8,13 +8,6 @@ import { auth, db } from '@/lib/firebase';
 import MachineCard from '@/components/MachineCard';
 import type { Machine } from '@/types';
 import { PORTAFOLIO_COLLECTION, ITEMS_PER_PAGE, MAX_FETCH_LIMIT } from '@/constants/appConfig';
-<<<<<<< Updated upstream
-=======
-import { logActivity, logError } from '@/lib/logger';
-import { LOG_CODES } from '@/constants/logCodes';
-import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
-import { useInactivityLogout } from '@/hooks/useInactivityLogout';
->>>>>>> Stashed changes
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -97,11 +90,6 @@ export default function PortafolioPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-<<<<<<< Updated upstream
-=======
-  const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
-  useInactivityLogout(isAuthenticated);
->>>>>>> Stashed changes
 
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);
