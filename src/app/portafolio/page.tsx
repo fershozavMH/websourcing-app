@@ -60,7 +60,7 @@ function normalizePortafolioDoc(raw: any): Machine {
   return {
     id:               raw.id,
     titulo:           raw.nombre           || raw.titulo           || '',
-    categoria_tarea:  raw.custom_categoria_equipo || raw.categoria_tarea || '',
+    categoria_tarea:  raw.categoria_tarea || '',
     origen_tarea:     '',
     pagina:           pagina               || raw.pagina           || '',
     url:              raw.custom_enlace    || raw.url              || '',
