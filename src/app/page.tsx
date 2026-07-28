@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -129,27 +129,35 @@ function CatalogApp() {
     setCurrentPage(1);
   }, [finalMachines]);
 
+  // undefined = aún no se ha evaluado (primer render); permite distinguir la carga
+  // inicial (donde debemos respetar los filtros que vengan en la URL) de un cambio
+  // real de categoría posterior (donde sí queremos limpiar los filtros previos).
+  const prevUrlCategoryRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
+    const isFirstRun = prevUrlCategoryRef.current === undefined;
     if (urlCategory) {
+      if (!isFirstRun && prevUrlCategoryRef.current !== urlCategory) {
+        filters.resetAllFilters();
+      }
       filters.setCategoryValue(urlCategory);
       fetchInitialData(urlCategory);
     } else {
       setMachines([]);
     }
+    prevUrlCategoryRef.current = urlCategory;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlCategory, fetchInitialData]);
 
   // Sincronizar filtros → URL para que sea compartible.
-  // Usa filters.categoryValue (con fallback a urlCategory) para que el cambio de
-  // categoría desde el dropdown no sea sobreescrito por el urlCategory viejo.
+  // El cambio de categoría (desde el inicio o el dropdown) siempre pasa por
+  // router.push, así que urlCategory es la única fuente de verdad para 'cat' —
+  // usar filters.categoryValue aquí causaba una condición de carrera (ese estado
+  // se actualiza un render después de que cambia la URL, así que este efecto
+  // alcanzaba a leer el valor viejo y revertía la navegación, generando un loop).
   useEffect(() => {
     if (!urlCategory) return;
-    // Cuando el usuario cambia la categoría desde el dropdown, filters.categoryValue ya tiene
-    // el nuevo valor antes de que urlCategory se actualice. Lo usamos para evitar que
-    // router.replace use el urlCategory viejo y sobreescriba el cambio de categoría.
-    const catParam = filters.categoryValue !== 'ALL' ? filters.categoryValue : urlCategory;
     const p = new URLSearchParams();
-    p.set('cat', catParam);
+    p.set('cat', urlCategory);
     if (dataSource !== 'AGENCIAS')                p.set('source', dataSource);
     if (viewMode   !== 'catalogo')                p.set('view',   viewMode);
     if (filters.searchValue)                      p.set('q', filters.searchValue);
@@ -184,7 +192,6 @@ function CatalogApp() {
   const handleLogout = async () => { logActivity(LOG_CODES.ACT_LOGOUT, 'Cierre de sesión'); await signOut(auth); router.push('/login'); };
 
   const handleSelectCategory = (catId: string) => {
-    filters.resetAllFilters();
     router.push(`/?cat=${encodeURIComponent(catId)}`);
   };
 
@@ -379,8 +386,7 @@ function CatalogApp() {
                 lastUpdate={lastUpdate}
                 onClearAll={filters.resetAllFilters}
                 onCategoryChange={(val: string) => {
-                  filters.setCategoryValue(val);
-                  filters.resetAllFilters();
+                  router.push(`/?cat=${encodeURIComponent(val)}`);
                 }}
               />
             </div>
