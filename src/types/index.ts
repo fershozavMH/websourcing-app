@@ -27,6 +27,7 @@ export interface Machine {
   tipo_pluma?: string;
 
   // --- NUEVOS CAMPOS TÉCNICOS (Opcionales con "?" porque FB no los tiene) ---
+  marca?: string;
   motor?: string;
   transmision?: string;
   capacidad?: string;
@@ -51,6 +52,49 @@ export interface Machine {
   subtipo_elevador?: string;
   combustible?: string;
   alcance?: number;
-  
+
   subtipo_grua_terreno?: string;
+
+  // --- CAMPOS PARA COMPACTADORAS ---
+  subtipo_compactadora?: string;
+
+  // --- CAMPOS PARA TRACTOCAMIONES ---
+  peso_eje?: number;
+
+  // --- IDENTIFICACIÓN ADICIONAL ---
+  numero_serie?: string;         // Número de serie del equipo (ej: "CAT0320FCNHD10235")
+
+  // --- CAMPOS DE SUBASTA ---
+  precio_maximo?: number;
+  subasta_inicia?: string;   // ISO date string, ej: "2026-06-15"
+  subasta_cierre?: string;   // ISO date string, ej: "2026-06-20"
+
+  // --- CAMPOS DE PORTAFOLIO (generados por la automatización de curación) ---
+  score_oportunidad?: string;      // "LOW" | "MEDIUM" | "HIGH"
+  margen_bruto_estimado?: number;  // Margen estimado en USD
+  aprobado?: boolean;
+  procesado?: boolean;
+}
+
+export interface Subasta {
+  id: string;
+  titulo: string;
+  descripcion?: string;
+  marca?: string;
+  modelo?: string;
+  año?: number;
+  categoria?: string;
+  lote?: string;
+  fuente?: string;
+  estado?: string;           // "proxima" | "activa" | "cerrada"
+  tipo_subasta?: string;     // "live" | "online"
+  fecha_subasta?: any;       // Firestore Timestamp
+  imagenes?: string[];
+  puja_inicial?: number;
+  puja_actual?: number;
+  ubicacion?: string;
+  url?: string;
+  specs_extra?: Record<string, string>;
+  scraped_at?: any;
+  en_calendario?: boolean;
 }
