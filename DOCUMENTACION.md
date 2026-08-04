@@ -2,7 +2,7 @@
 
 **Machinery Hunters | Plataforma de Inteligencia de Adquisición de Maquinaria**
 **Versión actual:** MVP (en producción) — rama `portafolio` activa
-**Última actualización:** 16 de julio de 2026
+**Última actualización:** 28 de julio de 2026
 
 ---
 
@@ -126,8 +126,10 @@ Facebook Marketplace ──►  (repo separado)           (este proyecto)
 | Base de datos | Firebase Firestore | Colección `maquinaria_aprobada` |
 | Autenticación | Firebase Auth | Email/password |
 | API Route ERP | Next.js Route Handler (`/api/erp`) | Envío al ERP Frappe con Firebase Admin |
+| API Route MVP | Next.js Route Handler (`/api/mvp`) | Envío directo a la Página Web MVP con Firebase Admin |
 | Firebase Admin SDK | `firebase-admin` | Lectura/escritura server-side de Firestore |
 | ERP | Frappe (mh.posix.mx) | DocType `MH Equipo` via REST API |
+| Página Web MVP | API REST propia | Recibe equipos vía `POST` con Bearer token (`MH_API_URL`/`MH_API_KEY`) |
 | Backend scraper | Python (repo separado) | Escribe en Firestore via service account |
 | Despliegue | Vercel | Hosting del frontend |
 | Analytics | Microsoft Clarity | Seguimiento de uso |
@@ -168,10 +170,12 @@ websourcing-app/
 │   │   ├── subastas/
 │   │   │   └── page.tsx            # Vista de subastas (colección "subastas") con lista/calendario
 │   │   └── api/
-│   │       └── erp/
-│   │           └── route.ts        # API Route: envío al ERP Frappe
+│   │       ├── erp/
+│   │       │   └── route.ts        # API Route: envío al ERP Frappe
+│   │       └── mvp/
+│   │           └── route.ts        # API Route: envío a la Página Web MVP
 │   ├── components/
-│   │   ├── MachineCard.tsx         # Tarjeta de maquinaria individual
+│   │   ├── MachineCard.tsx         # Tarjeta de maquinaria individual (incluye envío a ERP y a MVP)
 │   │   ├── SubastaCard.tsx         # Tarjeta de subasta individual (con toggle "al calendario")
 │   │   ├── CalendarioSubastas.tsx  # Vista de calendario mensual de subastas marcadas
 │   │   ├── Filters.tsx             # Sidebar de filtros orquestador
@@ -188,7 +192,8 @@ websourcing-app/
 │   │   └── useMachineFilters.ts    # Lógica de filtrado y ordenamiento
 │   ├── lib/
 │   │   ├── firebase.ts             # Inicialización de Firebase Client SDK
-│   │   └── firebase-admin.ts       # Inicialización de Firebase Admin SDK
+│   │   ├── firebase-admin.ts       # Inicialización de Firebase Admin SDK
+│   │   └── mvpFieldMapper.ts       # Mapeo de campos maquinaria_aprobada → payload API MVP
 │   ├── types/
 │   │   └── index.ts                # Interfaces TypeScript (Machine, SortOption)
 │   └── constants/
@@ -279,6 +284,10 @@ interface Machine {
   id_erp?: string               // ID Frappe asignado (ej. "EQUI-000042")
   enviado_por?: string          // Usuario que lo envió
   fecha_envio_erp?: string      // ISO datetime
+
+  // Trazabilidad MVP
+  enviado_mvp?: boolean         // true cuando se envió a la Página Web MVP
+  fecha_envio_mvp?: string      // ISO datetime
 
   // Identificación adicional
   numero_serie?: string         // Número de serie del equipo
@@ -420,6 +429,14 @@ interface Subasta {
 - Si fue eliminado del ERP, el check no lo encuentra y permite re-insertar.
 - Al éxito, actualiza el documento en Firebase (`estado_sourcing: "enviado_erp"`, `id_erp`, `enviado_por`, `fecha_envio_erp`).
 - El botón pasa a mostrar "Re-enviar al ERP" (permite reenvío manual si fuera necesario).
+
+### 9.7.1 Envío directo a la Página Web MVP
+- Desde el menú ⋮ de cualquier tarjeta → **Enviar al MVP** (junto al botón de envío a ERP).
+- Llama al API Route `POST /api/mvp` con el `docId` de Firestore; el servidor lee el documento completo de `maquinaria_aprobada` y arma el payload (no depende de datos ya en el ERP).
+- `mvpFieldMapper.ts` traduce el documento interno al formato que espera la API del MVP: mapea `categoria_tarea`/`subtipo_elevador` a `{category, subcategory}` del catálogo del MVP, deriva `state`/`city` desde `ubicacion`, arma `technicalSpecs` (motor, transmisión, capacidad, alcance, millas, combustible) y `features` (cabina, martillo, extensión, 4x4, almeja, ripper).
+- El equipo se envía como `isPublished: false` (no se publica automáticamente; alguien en el MVP debe aprobar/publicar).
+- Al éxito, actualiza el documento en Firebase (`enviado_mvp: true`, `fecha_envio_mvp`); el botón pasa a mostrar "Re-enviar al MVP" y permite reenvíos manuales.
+- No hay chequeo de duplicados contra el MVP (a diferencia del flujo ERP); cada envío llama a la API externa nuevamente con el mismo `externalId` (el `docId` de Firestore).
 
 ### 9.8 Paginación
 - 24 máquinas por página (constante `ITEMS_PER_PAGE`).
@@ -568,6 +585,10 @@ FIREBASE_ADMIN_PRIVATE_KEY=           # Private key completa con \n literales
 ERP_API_URL=                          # https://mh.posix.mx/api/resource/MH%20Equipo
 ERP_API_KEY=
 ERP_API_SECRET=
+
+# Página Web MVP (solo servidor — NO NEXT_PUBLIC_)
+MH_API_URL=                           # Endpoint REST del MVP que recibe equipos
+MH_API_KEY=                           # Token Bearer
 ```
 
 Para despliegue en Vercel, todas las variables deben configurarse en **Settings > Environment Variables**. Las variables `FIREBASE_ADMIN_*` y `ERP_*` deben ser **server-only** (sin el prefijo `NEXT_PUBLIC_`).
@@ -643,6 +664,7 @@ La aplicación está configurada para despliegue en **Vercel**.
 | Refactorización de constantes | `categories.tsx`, `locations.ts`, `vehicleSpecs.ts`, `machineCategories.ts`, `appConfig.ts` |
 | Página Portafolio (`/portafolio`) | Vista de colección `portafolio` con normalización de docs tipo ERP |
 | Página Subastas (`/subastas`) | Vista lista + calendario de colección `subastas`; toggle "al calendario" por tarjeta; filtros de estado/categoría/fuente/búsqueda |
+| Envío directo a Página Web MVP | Botón "Enviar al MVP" en MachineCard (`/api/mvp` + `mvpFieldMapper.ts`); primer paso del flujo WebSourcing → MVP |
 
 ### 🔄 En progreso (rama `portafolio`)
 
@@ -660,7 +682,8 @@ La aplicación está configurada para despliegue en **Vercel**.
 | Fechas de subasta en scraper | `subasta_inicia` y `subasta_cierre` ya están en el modelo; falta que el scraper las capture |
 | ERP → GoHighLevel CRM | Definir webhook o API de sincronización |
 | Página Web MVP → WebSourcing / ERP | Flujo de demanda de cliente → tarea de sourcing |
-| WebSourcing → Página Web MVP | Pipeline: ERP (validación) → Web pública (publicación) |
+| MVP — publicación tras envío | El envío desde WebSourcing crea el equipo en el MVP con `isPublished: false`; falta definir quién/cómo aprueba y publica |
+| MVP — anti-duplicados | El flujo `/api/mvp` no verifica si el equipo ya fue enviado antes de insertarlo de nuevo en el MVP (a diferencia del flujo ERP) |
 | Portafolio — campos de score y margen | La UI los muestra si existen; la automatización externa debe poblarlos |
 | Portafolio — filtros avanzados | Por ahora solo búsqueda, categoría y ordenamiento; pendiente ampliar si el equipo lo requiere |
 
@@ -718,4 +741,4 @@ La aplicación está configurada para despliegue en **Vercel**.
 
 ---
 
-*Última actualización: 16 de julio de 2026. Rama activa: `portafolio`. Mantener actualizado conforme evolucionen las integraciones entre plataformas.*
+*Última actualización: 28 de julio de 2026. Rama activa: `portafolio`. Mantener actualizado conforme evolucionen las integraciones entre plataformas.*
