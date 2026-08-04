@@ -90,8 +90,8 @@ export default function Filters(props: any) {
 
         {/* Búsqueda, categoría y orden */}
         <div className="space-y-2">
-          <label htmlFor="filter-keyword" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Palabra Clave</label>
-          <input id="filter-keyword" type="text" placeholder="Ingresar texto..." value={props.searchValue} onChange={(e) => props.onSearchChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+          <label htmlFor="filter-keyword" className="text-xs font-bold text-slate-500 uppercase tracking-wider">Palabra Clave o ID</label>
+          <input id="filter-keyword" type="text" placeholder="Buscar por texto o ID..." value={props.searchValue} onChange={(e) => props.onSearchChange(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
         </div>
 
         <div className="space-y-2">

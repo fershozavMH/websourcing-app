@@ -164,8 +164,8 @@ export const useMachineFilters = (machines: Machine[], init: InitialFilters = {}
 
     return machines.filter(m => {
       if (term) {
-        const generalText = `${m.titulo} ${m.origen_tarea} ${m.marca_pluma || ''} ${m.marca_camion || ''}`.toLowerCase();
-        if (!generalText.includes(term)) return false;
+          const generalText = `${m.id} ${m.titulo} ${m.origen_tarea} ${m.marca_pluma || ''} ${m.marca_camion || ''}`.toLowerCase();
+          if (!generalText.includes(term)) return false;
       }
 
       if (!matchesCategory(m.categoria_tarea, categoryValue)) return false;
