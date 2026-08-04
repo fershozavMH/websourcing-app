@@ -139,7 +139,7 @@ export const useMachineFilters = (machines: Machine[]) => {
     
     return machines.filter(m => {
       if (term) {
-          const generalText = `${m.titulo} ${m.origen_tarea} ${m.marca_pluma || ''} ${m.marca_camion || ''}`.toLowerCase();
+          const generalText = `${m.id} ${m.titulo} ${m.origen_tarea} ${m.marca_pluma || ''} ${m.marca_camion || ''}`.toLowerCase();
           if (!generalText.includes(term)) return false;
       }
       
