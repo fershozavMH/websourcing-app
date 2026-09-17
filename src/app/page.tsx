@@ -259,6 +259,12 @@ function CatalogApp() {
 
           <div className="flex items-center gap-4 md:gap-6">
             <button
+              onClick={() => router.push('/enviados')}
+              className="text-xs font-bold text-orange-400 hover:text-white bg-slate-800 hover:bg-orange-500 px-4 py-2.5 rounded-lg border border-slate-700 transition-colors shadow-sm whitespace-nowrap"
+            >
+              Enviados →
+            </button>
+            <button
               onClick={() => router.push('/subastas')}
               className="text-xs font-bold text-violet-400 hover:text-white bg-slate-800 hover:bg-violet-600 px-4 py-2.5 rounded-lg border border-slate-700 transition-colors shadow-sm whitespace-nowrap"
             >
