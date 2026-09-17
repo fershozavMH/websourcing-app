@@ -74,6 +74,14 @@ export interface Machine {
   margen_bruto_estimado?: number;  // Margen estimado en USD
   aprobado?: boolean;
   procesado?: boolean;
+
+  // --- TRACKING DE ENVÍO A ERP / MVP ---
+  estado_sourcing?: string;   // 'enviado_erp' cuando fue enviada al ERP
+  id_erp?: string;
+  enviado_por?: string;
+  fecha_envio_erp?: string;
+  enviado_mvp?: boolean;
+  fecha_envio_mvp?: string;
 }
 
 export interface Subasta {
