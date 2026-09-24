@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { writeLog } from '@/lib/monitoreo/writeLog';
 import { LOG_CODES } from '@/constants/logCodes';
+import { requireAuthenticatedUser } from '@/lib/apiAuth';
+import { FIREBASE_COLLECTION, PORTAFOLIO_COLLECTION } from '@/constants/appConfig';
 
 // Credenciales de Frappe por usuario (email → api_key / api_secret)
 // Fallback: ERP_API_KEY / ERP_API_SECRET (admin) cuando el usuario no tiene credenciales propias
@@ -134,13 +136,31 @@ const getSubastaSite = (pagina: string): string => {
   return 'Otro';
 };
 
+// Errores de validación cuyo mensaje sí es seguro mostrar al cliente.
+class RequestError extends Error {}
+
 export async function POST(request: Request) {
+  const guard = await requireAuthenticatedUser(request);
+  if (!guard.ok) return guard.response;
+
+  // Identidad tomada del token verificado, nunca del body.
+  const usuarioSourcing = guard.name;
+  const userEmail       = guard.email;
+
   try {
-    const maquina = await request.json();
-    const usuarioSourcing = maquina.usuario_sourcing || 'Analista_Desconocido';
+    const body = await request.json().catch(() => null);
+    const machineId = typeof body?.id === 'string' ? body.id : '';
+    if (!machineId) throw new RequestError('Falta el id del equipo.');
+
+    // Los datos del equipo se leen de Firestore; el body del cliente no se usa
+    // para que nadie pueda enviar información inventada al ERP.
+    const db = getFirestore();
+    let snap = await db.collection(FIREBASE_COLLECTION).doc(machineId).get();
+    if (!snap.exists) snap = await db.collection(PORTAFOLIO_COLLECTION).doc(machineId).get();
+    if (!snap.exists) throw new RequestError('Equipo no encontrado en Firestore.');
+    const maquina: Record<string, any> = { ...snap.data(), id: machineId };
 
     const apiUrl    = process.env.ERP_API_URL;
-    const userEmail = maquina.usuario_email ?? '';
     const userCreds = CREDENCIALES_ERP[userEmail];
     const apiKey    = (userCreds?.key    && userCreds.key    !== '') ? userCreds.key    : (process.env.ERP_API_KEY    ?? '');
     const apiSecret = (userCreds?.secret && userCreds.secret !== '') ? userCreds.secret : (process.env.ERP_API_SECRET ?? '');
@@ -372,15 +392,12 @@ ENVIADO POR: ${usuarioSourcing}`;
 
     // Actualizar Firebase para trazabilidad
     try {
-      const db = getFirestore();
-      if (maquina.id) {
-        await db.collection('maquinaria_aprobada').doc(maquina.id).update({
-          estado_sourcing: 'enviado_erp',
-          id_erp:          idFrappe,
-          enviado_por:     usuarioSourcing,
-          fecha_envio_erp: new Date().toISOString(),
-        });
-      }
+      await db.collection(FIREBASE_COLLECTION).doc(machineId).update({
+        estado_sourcing: 'enviado_erp',
+        id_erp:          idFrappe,
+        enviado_por:     usuarioSourcing,
+        fecha_envio_erp: new Date().toISOString(),
+      });
     } catch (fbError: any) {
       console.warn('La máquina se envió al ERP, pero falló la actualización en Firebase:', fbError);
       await writeLog({
@@ -422,7 +439,14 @@ ENVIADO POR: ${usuarioSourcing}`;
       stack: error?.stack,
       source: 'server',
       route: '/api/erp',
+      userEmail,
     });
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    if (error instanceof RequestError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+    return NextResponse.json(
+      { success: false, error: 'No se pudo completar el envío al ERP. El detalle quedó registrado en los logs.' },
+      { status: 500 },
+    );
   }
 }

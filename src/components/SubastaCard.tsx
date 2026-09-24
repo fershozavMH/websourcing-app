@@ -233,7 +233,7 @@ export default function SubastaCard({
             {subasta.en_calendario ? 'En Calendario' : 'Al Calendario'}
           </button>
 
-          {subasta.url && (
+          {/^https?:\/\//i.test(subasta.url || '') && (
             <a
               href={subasta.url}
               target="_blank"

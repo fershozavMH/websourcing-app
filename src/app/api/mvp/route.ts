@@ -2,12 +2,22 @@ import '@/lib/firebase-admin';
 import { NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import { mapToMhApi } from '@/lib/mvpFieldMapper';
+import { requireAuthenticatedUser } from '@/lib/apiAuth';
+import { writeLog } from '@/lib/monitoreo/writeLog';
+import { LOG_CODES } from '@/constants/logCodes';
+
+// Errores de validación cuyo mensaje sí es seguro mostrar al cliente.
+class RequestError extends Error {}
 
 export async function POST(request: Request) {
+  const guard = await requireAuthenticatedUser(request);
+  if (!guard.ok) return guard.response;
+
   try {
-    const { docId } = await request.json();
+    const body = await request.json().catch(() => null);
+    const docId = typeof body?.docId === 'string' ? body.docId : '';
     if (!docId) {
-      throw new Error('Falta el docId del equipo.');
+      throw new RequestError('Falta el docId del equipo.');
     }
 
     const apiUrl = process.env.MH_API_URL;
@@ -20,7 +30,7 @@ export async function POST(request: Request) {
     const docRef = db.collection('maquinaria_aprobada').doc(docId);
     const docSnap = await docRef.get();
     if (!docSnap.exists) {
-      throw new Error('Equipo no encontrado en Firestore.');
+      throw new RequestError('Equipo no encontrado en Firestore.');
     }
 
     const payload = mapToMhApi(docId, docSnap.data() as Record<string, any>);
@@ -54,6 +64,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, data: mhResult });
 
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    await writeLog({
+      level: 'error',
+      category: 'error',
+      code: LOG_CODES.ERR_MVP_SEND,
+      message: error?.message ?? 'Error al enviar máquina al MVP',
+      stack: error?.stack,
+      source: 'server',
+      route: '/api/mvp',
+      userEmail: guard.email,
+    });
+    if (error instanceof RequestError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+    return NextResponse.json(
+      { success: false, error: 'No se pudo completar el envío al MVP. El detalle quedó registrado en los logs.' },
+      { status: 500 },
+    );
   }
 }
