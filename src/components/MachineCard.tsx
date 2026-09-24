@@ -41,6 +41,10 @@ export default function MachineCard({ machine }: { machine: Machine }) {
   const phoneClean = machine.telefono_vendedor ? machine.telefono_vendedor.replace(/[^\d+]/g, '') : '';
   const phoneLink = phoneClean.startsWith('+') ? phoneClean : `+${phoneClean}`;
 
+  // machine.url viene de datos scrapeados (fuente externa, no confiable al 100%);
+  // solo se permite http(s) para evitar esquemas como javascript: en el href.
+  const safeUrl = /^https?:\/\//i.test(machine.url || '') ? machine.url : undefined;
+
   const hasImages = machine.imagenes && machine.imagenes.length > 0;
   const imageCount = hasImages ? machine.imagenes.length : 0;
 
@@ -67,16 +71,16 @@ export default function MachineCard({ machine }: { machine: Machine }) {
       const auth = getAuth();
       const user = auth.currentUser;
       const usuarioActual = user?.displayName || user?.email || "Analista_Manual";
-      
-      const payload = {
-        ...machine,
-        usuario_sourcing: usuarioActual,
-        usuario_email:    user?.email ?? '',
-      };
+      const token = await user?.getIdToken();
+
+      const payload = { id: machine.id };
 
       const res = await fetch('/api/erp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(payload)
       });
       
@@ -115,9 +119,13 @@ export default function MachineCard({ machine }: { machine: Machine }) {
     setEnviandoMvp(true);
 
     try {
+      const token = await getAuth().currentUser?.getIdToken();
       const res = await fetch('/api/mvp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ docId: machine.id })
       });
 
@@ -413,9 +421,15 @@ export default function MachineCard({ machine }: { machine: Machine }) {
               {machine.telefono_vendedor && machine.telefono_vendedor !== 'N/D' ? machine.telefono_vendedor : 'Llamar'}
             </span>
           </a>
-          <a href={machine.url} target="_blank" rel="noopener noreferrer" className="shrink-0 bg-slate-900 text-white font-bold py-2 px-3 rounded-lg text-[10px] hover:bg-orange-500 transition-colors shadow-sm ml-auto text-center">
-            Ver Detalles
-          </a>
+          {safeUrl ? (
+            <a href={safeUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 bg-slate-900 text-white font-bold py-2 px-3 rounded-lg text-[10px] hover:bg-orange-500 transition-colors shadow-sm ml-auto text-center">
+              Ver Detalles
+            </a>
+          ) : (
+            <span className="shrink-0 bg-slate-200 text-slate-400 font-bold py-2 px-3 rounded-lg text-[10px] shadow-sm ml-auto text-center cursor-not-allowed" title="Enlace no disponible">
+              Ver Detalles
+            </span>
+          )}
         </div>
       </div>
     </div>
