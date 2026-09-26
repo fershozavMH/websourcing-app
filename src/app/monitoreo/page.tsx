@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import ErroresSeguridadTab from './ErroresSeguridadTab';
 import ActividadUsuariosTab from './ActividadUsuariosTab';
 import AdminsPanel from './AdminsPanel';
+import SaludSistemaTab from './SaludSistemaTab';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 
 type AccessState = 'checking' | 'denied' | 'granted';
@@ -16,7 +17,7 @@ export default function MonitoreoPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [access, setAccess] = useState<AccessState>('checking');
-  const [tab, setTab] = useState<'errores' | 'actividad'>('errores');
+  const [tab, setTab] = useState<'salud' | 'errores' | 'actividad'>('salud');
   useInactivityLogout(access === 'granted');
 
   useEffect(() => {
@@ -108,7 +109,15 @@ export default function MonitoreoPage() {
       </nav>
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setTab('salud')}
+            className={`px-4 py-2 rounded-lg text-sm font-bold ${
+              tab === 'salud' ? 'bg-orange-600 text-white' : 'bg-white text-slate-600 border border-slate-300'
+            }`}
+          >
+            Salud del Sistema
+          </button>
           <button
             onClick={() => setTab('errores')}
             className={`px-4 py-2 rounded-lg text-sm font-bold ${
@@ -127,7 +136,7 @@ export default function MonitoreoPage() {
           </button>
         </div>
 
-        {tab === 'errores' ? <ErroresSeguridadTab /> : <ActividadUsuariosTab />}
+        {tab === 'salud' ? <SaludSistemaTab /> : tab === 'errores' ? <ErroresSeguridadTab /> : <ActividadUsuariosTab />}
 
         <AdminsPanel />
       </div>
