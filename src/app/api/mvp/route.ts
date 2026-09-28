@@ -56,6 +56,7 @@ export async function POST(request: Request) {
       await docRef.update({
         enviado_mvp: true,
         fecha_envio_mvp: new Date().toISOString(),
+        enviado_mvp_por: guard.name,
       });
     } catch (fbError) {
       console.warn('El equipo se envió al MVP, pero falló la actualización en Firebase:', fbError);

@@ -8,6 +8,16 @@ import { LOG_CODES } from '@/constants/logCodes';
 
 const DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const PRODUCTIVITY_WEEKS = 6;
+const UPCOMING_AUCTION_DAYS = 3;
+
+// Lunes de la semana ISO a la que pertenece `d`, como clave "YYYY-MM-DD".
+function isoWeekStart(d: Date): string {
+  const copy = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = copy.getUTCDay() || 7;
+  copy.setUTCDate(copy.getUTCDate() - day + 1);
+  return copy.toISOString().slice(0, 10);
+}
 
 const dayKey = (d: Date) => d.toISOString().slice(0, 10);
 
@@ -43,8 +53,24 @@ export async function GET(request: Request) {
       .limit(2000)
       .get();
 
+  const sinceProductivity = new Date(Date.now() - PRODUCTIVITY_WEEKS * 7 * DAY_MS).toISOString();
+  const now = new Date();
+  const upcomingLimit = new Date(now.getTime() + UPCOMING_AUCTION_DAYS * DAY_MS);
+
   const logsCol = db.collection(SYSTEM_LOGS_COLLECTION);
-  const [errorLogs, securityLogs, erpSent, mvpSent, lastMachine, lastAuction, logCount, oldestLog] = await Promise.allSettled([
+  const [
+    errorLogs,
+    securityLogs,
+    erpSent,
+    mvpSent,
+    lastMachine,
+    lastAuction,
+    logCount,
+    oldestLog,
+    erpProductivity,
+    mvpProductivity,
+    upcomingAuctions,
+  ] = await Promise.allSettled([
     logsFor('error'),
     logsFor('security'),
     db.collection(FIREBASE_COLLECTION).where('fecha_envio_erp', '>=', since.toISOString()).get(),
@@ -53,6 +79,12 @@ export async function GET(request: Request) {
     lastTimestamp(SUBASTAS_COLLECTION, 'scraped_at'),
     logsCol.count().get(),
     logsCol.orderBy('timestamp', 'asc').limit(1).get(),
+    db.collection(FIREBASE_COLLECTION).where('fecha_envio_erp', '>=', sinceProductivity).get(),
+    db.collection(FIREBASE_COLLECTION).where('fecha_envio_mvp', '>=', sinceProductivity).get(),
+    // Sin filtro de fecha en la consulta: `fecha_subasta` puede venir como
+    // Timestamp o como string según lo que haya escrito el scraper, y
+    // Firestore no compara rangos entre tipos distintos. Se filtra en memoria.
+    db.collection(SUBASTAS_COLLECTION).where('estado', '!=', 'cerrada').limit(2000).get(),
   ]);
 
   const days: string[] = [];
@@ -158,6 +190,89 @@ export async function GET(request: Request) {
     errors.push('No se pudo leer los logs de seguridad.');
   }
 
+  // ── Productividad semanal (ERP + MVP) ────────────────────────────────────
+  const weeks: string[] = [];
+  for (let i = PRODUCTIVITY_WEEKS - 1; i >= 0; i--) {
+    weeks.push(isoWeekStart(new Date(Date.now() - i * 7 * DAY_MS)));
+  }
+  const productivity = new Map<string, Record<string, { erp: number; mvp: number }>>();
+  const ensureUser = (user: string) => {
+    if (!productivity.has(user)) {
+      productivity.set(user, Object.fromEntries(weeks.map((w) => [w, { erp: 0, mvp: 0 }])));
+    }
+    return productivity.get(user)!;
+  };
+
+  if (erpProductivity.status === 'fulfilled') {
+    erpProductivity.value.docs.forEach((d) => {
+      const data = d.data();
+      const at = toDate(data.fecha_envio_erp);
+      if (!at) return;
+      const w = isoWeekStart(at);
+      const user = data.enviado_por || 'Desconocido';
+      const bucket = ensureUser(user);
+      if (w in bucket) bucket[w].erp++;
+    });
+  } else {
+    console.error('[monitoreo/health] productividad ERP falló:', erpProductivity.reason);
+    errors.push('No se pudo calcular la productividad de ERP.');
+  }
+
+  if (mvpProductivity.status === 'fulfilled') {
+    mvpProductivity.value.docs.forEach((d) => {
+      const data = d.data();
+      const at = toDate(data.fecha_envio_mvp);
+      if (!at) return;
+      const w = isoWeekStart(at);
+      const user = data.enviado_mvp_por || 'Desconocido';
+      const bucket = ensureUser(user);
+      if (w in bucket) bucket[w].mvp++;
+    });
+  } else {
+    console.error('[monitoreo/health] productividad MVP falló:', mvpProductivity.reason);
+    errors.push('No se pudo calcular la productividad de MVP.');
+  }
+
+  const productivityByUser = Array.from(productivity.entries())
+    .map(([usuario, byWeek]) => {
+      const series = weeks.map((w) => ({ semana: w.slice(5), erp: byWeek[w].erp, mvp: byWeek[w].mvp }));
+      const total = series.reduce((s, w) => s + w.erp + w.mvp, 0);
+      return { usuario, series, total };
+    })
+    .filter((u) => u.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  // ── Subastas próximas sin revisar ────────────────────────────────────────
+  let pendingAuctions: Array<{ id: string; titulo: string; fecha_subasta: string | null; fuente: string | null }> = [];
+  if (upcomingAuctions.status === 'fulfilled') {
+    pendingAuctions = upcomingAuctions.value.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          titulo: data.titulo ?? 'Sin título',
+          fecha_subasta: toDate(data.fecha_subasta)?.toISOString() ?? null,
+          fuente: data.fuente ?? null,
+          estado: data.estado,
+          en_calendario: !!data.en_calendario,
+        };
+      })
+      .filter(
+        (s) =>
+          s.estado !== 'cerrada' &&
+          !s.en_calendario &&
+          s.fecha_subasta &&
+          new Date(s.fecha_subasta) >= now &&
+          new Date(s.fecha_subasta) <= upcomingLimit,
+      )
+      .sort((a, b) => (a.fecha_subasta ?? '').localeCompare(b.fecha_subasta ?? ''))
+      .slice(0, 20)
+      .map(({ id, titulo, fecha_subasta, fuente }) => ({ id, titulo, fecha_subasta, fuente }));
+  } else {
+    console.error('[monitoreo/health] subastas próximas falló:', upcomingAuctions.reason);
+    errors.push('No se pudo obtener las subastas próximas sin revisar.');
+  }
+
   const sum = (r: Record<string, number>) => Object.values(r).reduce((s, n) => s + n, 0);
   const series = (ok: Record<string, number>, fail: Record<string, number>) =>
     days.map((d) => ({ fecha: d.slice(5), ok: ok[d], fallos: fail[d] }));
@@ -198,6 +313,8 @@ export async function GET(request: Request) {
       unauthorized24h,
       failed24h: Array.from(byEmail.values()).reduce((s, v) => s + v.count, 0),
     },
+    productivity: { weeks: weeks.map((w) => w.slice(5)), byUser: productivityByUser },
+    pendingAuctions,
     errors,
   });
 }

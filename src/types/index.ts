@@ -82,6 +82,7 @@ export interface Machine {
   fecha_envio_erp?: string;
   enviado_mvp?: boolean;
   fecha_envio_mvp?: string;
+  enviado_mvp_por?: string;
 }
 
 export interface Subasta {

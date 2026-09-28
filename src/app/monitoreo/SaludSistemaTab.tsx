@@ -35,6 +35,11 @@ interface HealthData {
     unauthorized24h: number;
     failed24h: number;
   };
+  productivity: {
+    weeks: string[];
+    byUser: Array<{ usuario: string; series: Array<{ semana: string; erp: number; mvp: number }>; total: number }>;
+  };
+  pendingAuctions: Array<{ id: string; titulo: string; fecha_subasta: string | null; fuente: string | null }>;
   errors: string[];
 }
 
@@ -195,6 +200,56 @@ export default function SaludSistemaTab() {
             <SendChart title="Envíos a MVP" data={data.mvp} />
           </div>
 
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
+              Productividad por usuario
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Envíos a ERP y MVP por semana, últimas {data.productivity.weeks.length} semanas.
+            </p>
+            {data.productivity.byUser.length === 0 ? (
+              <p className="text-sm text-slate-500">Sin envíos en el periodo.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                      <th className="py-2 px-2 sticky left-0 bg-white">Usuario</th>
+                      {data.productivity.weeks.map((w) => (
+                        <th key={w} className="py-2 px-2 text-center whitespace-nowrap">
+                          {w}
+                        </th>
+                      ))}
+                      <th className="py-2 px-2 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.productivity.byUser.map((u) => (
+                      <tr key={u.usuario} className="border-b border-slate-100">
+                        <td className="py-1.5 px-2 text-slate-800 sticky left-0 bg-white whitespace-nowrap">{u.usuario}</td>
+                        {u.series.map((s) => (
+                          <td key={s.semana} className="py-1.5 px-2 text-center text-slate-600">
+                            {s.erp + s.mvp > 0 ? (
+                              <span title={`ERP: ${s.erp} · MVP: ${s.mvp}`}>
+                                {s.erp}
+                                <span className="text-slate-300">/</span>
+                                {s.mvp}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300">—</span>
+                            )}
+                          </td>
+                        ))}
+                        <td className="py-1.5 px-2 text-right font-bold text-slate-800">{u.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-[11px] text-slate-400 mt-2">Formato por celda: ERP / MVP.</p>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
@@ -268,6 +323,39 @@ export default function SaludSistemaTab() {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
+              Subastas por cerrar sin revisar
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Cierran en los próximos 3 días y nadie las marcó en el calendario de seguimiento.
+            </p>
+            {data.pendingAuctions.length === 0 ? (
+              <p className="text-sm text-slate-500">No hay subastas próximas sin revisar.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                    <th className="py-2 px-2">Título</th>
+                    <th className="py-2 px-2">Fuente</th>
+                    <th className="py-2 px-2">Cierra</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.pendingAuctions.map((s) => (
+                    <tr key={s.id} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-800">{s.titulo}</td>
+                      <td className="py-1.5 px-2 text-slate-500">{s.fuente ?? '—'}</td>
+                      <td className="py-1.5 px-2 font-bold text-amber-700">
+                        {s.fecha_subasta ? new Date(s.fecha_subasta).toLocaleString('es-MX') : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
 
