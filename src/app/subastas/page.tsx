@@ -13,6 +13,7 @@ import { logActivity } from '@/lib/logger';
 import { LOG_CODES } from '@/constants/logCodes';
 import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+import { usePageView } from '@/hooks/usePageView';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -50,6 +51,7 @@ export default function SubastasPage() {
   const [currentUser, setCurrentUser]     = useState<User | null>(null);
   const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
   useInactivityLogout(isAuthenticated);
+  usePageView('subastas', isAuthenticated);
 
   const [subastas, setSubastas]           = useState<Subasta[]>([]);
   const [loading, setLoading]             = useState(false);

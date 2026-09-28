@@ -14,6 +14,7 @@ import { useMachines } from '@/hooks/useMachines';
 import { useMachineFilters, type InitialFilters } from '@/hooks/useMachineFilters';
 import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+import { usePageView } from '@/hooks/usePageView';
 import { ITEMS_PER_PAGE } from '@/constants/appConfig';
 import type { SortOption } from '@/types';
 import { logActivity } from '@/lib/logger';
@@ -59,6 +60,7 @@ function CatalogApp() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
   useInactivityLogout(isAuthenticated);
+  usePageView('sourcing', isAuthenticated);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [dataSource, setDataSource] = useState<'AGENCIAS' | 'FACEBOOK' | 'ALL'>(

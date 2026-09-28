@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getFirestore } from 'firebase-admin/firestore';
 import '@/lib/firebase-admin';
 import { requireMonitoreoAdmin } from '@/lib/monitoreo/auth';
-import { SYSTEM_LOGS_COLLECTION } from '@/constants/monitoreo';
+import { SYSTEM_LOGS_COLLECTION, USER_PRESENCE_DAILY_COLLECTION } from '@/constants/monitoreo';
 import { FIREBASE_COLLECTION, PORTAFOLIO_COLLECTION, SUBASTAS_COLLECTION } from '@/constants/appConfig';
 import { LOG_CODES } from '@/constants/logCodes';
 
@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
   // Las consultas de logs usan el índice category+timestamp que ya requiere
   // /api/monitoreo/activity; el filtrado por código se hace en memoria.
-  const logsFor = (category: 'error' | 'security') =>
+  const logsFor = (category: 'error' | 'security' | 'activity') =>
     db
       .collection(SYSTEM_LOGS_COLLECTION)
       .where('category', '==', category)
@@ -85,6 +85,10 @@ export async function GET(request: Request) {
     machinesCount,
     portafolioCount,
     subastasCount,
+    activityLogs,
+    presenceDaily,
+    portafolioAprobado,
+    portafolioProcesado,
   ] = await Promise.allSettled([
     logsFor('error'),
     logsFor('security'),
@@ -103,6 +107,10 @@ export async function GET(request: Request) {
     db.collection(FIREBASE_COLLECTION).count().get(),
     db.collection(PORTAFOLIO_COLLECTION).count().get(),
     db.collection(SUBASTAS_COLLECTION).count().get(),
+    logsFor('activity'),
+    db.collection(USER_PRESENCE_DAILY_COLLECTION).where('date', '>=', dayKey(since)).get(),
+    db.collection(PORTAFOLIO_COLLECTION).where('aprobado', '==', true).count().get(),
+    db.collection(PORTAFOLIO_COLLECTION).where('procesado', '==', true).count().get(),
   ]);
 
   const days: string[] = [];
@@ -301,6 +309,52 @@ export async function GET(request: Request) {
     errors.push('No se pudo obtener las subastas próximas sin revisar.');
   }
 
+  // ── Uso por sección (vistas de página, 14 días) ──────────────────────────
+  const viewsBySection = new Map<string, number>();
+  if (activityLogs.status === 'fulfilled') {
+    activityLogs.value.docs.forEach((doc) => {
+      const data = doc.data();
+      if (data.code !== LOG_CODES.ACT_PAGE_VIEW) return;
+      const section = data.metadata?.section || data.route || 'desconocida';
+      viewsBySection.set(section, (viewsBySection.get(section) ?? 0) + 1);
+    });
+  } else {
+    console.error('[monitoreo/health] vistas de página fallaron:', activityLogs.reason);
+    errors.push('No se pudo calcular el uso por sección.');
+  }
+
+  // ── Horas activas por usuario (14 días) ──────────────────────────────────
+  const hoursByUser = new Map<string, number>();
+  if (presenceDaily.status === 'fulfilled') {
+    presenceDaily.value.docs.forEach((doc) => {
+      const data = doc.data();
+      const email = data.email ?? 'desconocido';
+      const minutes = typeof data.minutes === 'number' ? data.minutes : 0;
+      hoursByUser.set(email, (hoursByUser.get(email) ?? 0) + minutes / 60);
+    });
+  } else {
+    console.error('[monitoreo/health] presencia diaria falló:', presenceDaily.reason);
+    errors.push('No se pudo calcular las horas activas por usuario.');
+  }
+
+  // ── Embudo de sourcing (conteos actuales, no acotados a los 14 días) ────
+  // "Revisadas"/"Enviadas" son estados actuales de los documentos, no eventos
+  // con fecha, así que el embudo es una foto del momento, no una serie temporal.
+  const funnel = {
+    portafolio: portafolioCount.status === 'fulfilled' ? portafolioCount.value.data().count : null,
+    aprobadas: portafolioAprobado.status === 'fulfilled' ? portafolioAprobado.value.data().count : null,
+    procesadas: portafolioProcesado.status === 'fulfilled' ? portafolioProcesado.value.data().count : null,
+    enviadasErp: machinesCount.status === 'fulfilled' ? machinesCount.value.data().count : null,
+  };
+  if (portafolioAprobado.status === 'rejected') {
+    console.error('[monitoreo/health] portafolio aprobadas falló:', portafolioAprobado.reason);
+    errors.push('No se pudo contar las máquinas aprobadas del portafolio.');
+  }
+  if (portafolioProcesado.status === 'rejected') {
+    console.error('[monitoreo/health] portafolio procesadas falló:', portafolioProcesado.reason);
+    errors.push('No se pudo contar las máquinas procesadas del portafolio.');
+  }
+
   const sum = (r: Record<string, number>) => Object.values(r).reduce((s, n) => s + n, 0);
   const series = (ok: Record<string, number>, fail: Record<string, number>) =>
     days.map((d) => ({ fecha: d.slice(5), ok: ok[d], fallos: fail[d] }));
@@ -354,6 +408,13 @@ export async function GET(request: Request) {
       portafolio: portafolioCount.status === 'fulfilled' ? portafolioCount.value.data().count : null,
       subastas: subastasCount.status === 'fulfilled' ? subastasCount.value.data().count : null,
     },
+    viewsBySection: Array.from(viewsBySection.entries())
+      .map(([section, total]) => ({ section, total }))
+      .sort((a, b) => b.total - a.total),
+    hoursByUser: Array.from(hoursByUser.entries())
+      .map(([email, hours]) => ({ email, hours: Math.round(hours * 10) / 10 }))
+      .sort((a, b) => b.hours - a.hours),
+    funnel,
     errors,
   });
 }

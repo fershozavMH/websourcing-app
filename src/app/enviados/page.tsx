@@ -8,6 +8,7 @@ import { auth, db } from '@/lib/firebase';
 import MachineCard from '@/components/MachineCard';
 import type { Machine } from '@/types';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+import { usePageView } from '@/hooks/usePageView';
 
 const MAX_FETCH_LIMIT = 1000;
 const ITEMS_PER_PAGE = 24;
@@ -77,6 +78,7 @@ export default function EnviadosPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   useInactivityLogout(isAuthenticated);
+  usePageView('enviados', isAuthenticated);
 
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);

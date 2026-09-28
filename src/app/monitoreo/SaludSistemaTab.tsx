@@ -43,6 +43,9 @@ interface HealthData {
   browserErrors: Array<{ browser: string; total: number }>;
   imageErrorsBySource: Array<{ fuente: string; total: number }>;
   collectionSizes: { maquinas: number | null; portafolio: number | null; subastas: number | null };
+  viewsBySection: Array<{ section: string; total: number }>;
+  hoursByUser: Array<{ email: string; hours: number }>;
+  funnel: { portafolio: number | null; aprobadas: number | null; procesadas: number | null; enviadasErp: number | null };
   errors: string[];
 }
 
@@ -253,6 +256,35 @@ export default function SaludSistemaTab() {
             )}
           </div>
 
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">Horas activas por usuario</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Estimadas por latidos de presencia mientras la pestaña está abierta y con actividad, últimos 14 días.
+            </p>
+            {data.hoursByUser.length === 0 ? (
+              <p className="text-sm text-slate-500">Sin datos de presencia todavía.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                    <th className="py-2 px-2">Usuario</th>
+                    <th className="py-2 px-2 text-right">Horas (14 d)</th>
+                    <th className="py-2 px-2 text-right">Promedio / día</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.hoursByUser.map((u) => (
+                    <tr key={u.email} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-800 break-all">{u.email}</td>
+                      <td className="py-1.5 px-2 text-right font-bold text-slate-800">{u.hours.toFixed(1)} h</td>
+                      <td className="py-1.5 px-2 text-right text-slate-500">{(u.hours / 14).toFixed(1)} h</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
               <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
@@ -331,6 +363,45 @@ export default function SaludSistemaTab() {
                 <p className="text-xs text-slate-500 mt-1">Subastas</p>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">Embudo de sourcing</h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Foto del estado actual del portafolio, no una serie por fecha.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+              {[
+                { label: 'En portafolio', value: data.funnel.portafolio },
+                { label: 'Aprobadas', value: data.funnel.aprobadas },
+                { label: 'Procesadas', value: data.funnel.procesadas },
+                { label: 'Enviadas al ERP (total)', value: data.funnel.enviadasErp },
+              ].map((stage) => (
+                <div key={stage.label}>
+                  <p className="text-2xl font-black text-slate-800">{stage.value?.toLocaleString('es-MX') ?? '—'}</p>
+                  <p className="text-xs text-slate-500 mt-1">{stage.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">Uso por sección (14 d)</h3>
+            <p className="text-xs text-slate-500 mb-4">Vistas registradas al entrar a cada sección de la app.</p>
+            {data.viewsBySection.length === 0 ? (
+              <p className="text-sm text-slate-500">Sin datos todavía.</p>
+            ) : (
+              <table className="w-full text-sm">
+                <tbody>
+                  {data.viewsBySection.map((v) => (
+                    <tr key={v.section} className="border-b border-slate-100">
+                      <td className="py-1.5 px-2 text-slate-700 capitalize">{v.section}</td>
+                      <td className="py-1.5 px-2 text-right font-bold text-slate-800">{v.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">

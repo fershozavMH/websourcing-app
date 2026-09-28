@@ -9,6 +9,7 @@ import ActividadUsuariosTab from './ActividadUsuariosTab';
 import AdminsPanel from './AdminsPanel';
 import SaludSistemaTab from './SaludSistemaTab';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+import { usePageView } from '@/hooks/usePageView';
 
 type AccessState = 'checking' | 'denied' | 'granted';
 
@@ -19,6 +20,7 @@ export default function MonitoreoPage() {
   const [access, setAccess] = useState<AccessState>('checking');
   const [tab, setTab] = useState<'salud' | 'errores' | 'actividad'>('salud');
   useInactivityLogout(access === 'granted');
+  usePageView('monitoreo', access === 'granted');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

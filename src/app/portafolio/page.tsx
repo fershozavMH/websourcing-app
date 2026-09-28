@@ -12,6 +12,7 @@ import { logActivity, logError } from '@/lib/logger';
 import { LOG_CODES } from '@/constants/logCodes';
 import { useMonitoreoAccess } from '@/hooks/useMonitoreoAccess';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
+import { usePageView } from '@/hooks/usePageView';
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -96,6 +97,7 @@ export default function PortafolioPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const hasMonitoreoAccess = useMonitoreoAccess(currentUser);
   useInactivityLogout(isAuthenticated);
+  usePageView('portafolio', isAuthenticated);
 
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);

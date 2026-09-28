@@ -31,3 +31,10 @@ export const FAILED_LOGIN_ALERT_THRESHOLD = 5; // intentos fallidos en 24h por c
 // activa una política TTL sobre ese campo en la colección system_logs.
 export const LOG_RETENTION_DAYS = 90;
 export const LOG_VOLUME_WARN_DOCS = 50_000;
+
+// Historial de presencia, agregado por día (un doc por usuario y día), para
+// estimar horas activas sin guardar cada latido individual. Comparte el
+// patrón de expireAt + TTL de system_logs (requiere su propia política TTL
+// sobre esta colección).
+export const USER_PRESENCE_DAILY_COLLECTION = 'user_presence_daily';
+export const PRESENCE_RETENTION_DAYS = 90;
