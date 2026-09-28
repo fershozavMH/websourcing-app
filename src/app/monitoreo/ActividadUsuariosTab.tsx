@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { auth } from '@/lib/firebase';
+import { PRESENCE_ONLINE_WINDOW_MS } from '@/constants/monitoreo';
 
 interface ActivityUser {
   uid: string;
   email: string | null;
   lastSignInTime: string | null;
+  lastSeen: string | null;
   creationTime: string | null;
 }
 
@@ -25,10 +27,23 @@ interface ErpSendEntry {
 
 const ACTIVE_THRESHOLD_DAYS = 7;
 
-function isActive(lastSignInTime: string | null): boolean {
-  if (!lastSignInTime) return false;
-  const days = (Date.now() - new Date(lastSignInTime).getTime()) / (1000 * 60 * 60 * 24);
-  return days <= ACTIVE_THRESHOLD_DAYS;
+// Momento más reciente entre el último login y el último latido de presencia
+// (los usuarios con sesión persistente no actualizan lastSignInTime).
+function lastAccess(user: ActivityUser): number | null {
+  const times = [user.lastSignInTime, user.lastSeen]
+    .filter((t): t is string => !!t)
+    .map((t) => new Date(t).getTime());
+  return times.length ? Math.max(...times) : null;
+}
+
+function isActive(user: ActivityUser): boolean {
+  const last = lastAccess(user);
+  if (last === null) return false;
+  return (Date.now() - last) / (1000 * 60 * 60 * 24) <= ACTIVE_THRESHOLD_DAYS;
+}
+
+function isOnline(user: ActivityUser): boolean {
+  return !!user.lastSeen && Date.now() - new Date(user.lastSeen).getTime() <= PRESENCE_ONLINE_WINDOW_MS;
 }
 
 export default function ActividadUsuariosTab() {
@@ -130,15 +145,19 @@ export default function ActividadUsuariosTab() {
                 <tr key={user.uid} className="border-b border-slate-100">
                   <td className="py-2 px-3 text-slate-800">{user.email ?? '—'}</td>
                   <td className="py-2 px-3 text-slate-500">
-                    {user.lastSignInTime ? new Date(user.lastSignInTime).toLocaleString('es-MX') : 'Nunca'}
+                    {lastAccess(user) ? new Date(lastAccess(user)!).toLocaleString('es-MX') : 'Nunca'}
                   </td>
                   <td className="py-2 px-3">
                     <span
                       className={`px-2 py-1 rounded text-xs font-bold ${
-                        isActive(user.lastSignInTime) ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+                        isOnline(user)
+                          ? 'bg-emerald-500 text-white'
+                          : isActive(user)
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-slate-100 text-slate-500'
                       }`}
                     >
-                      {isActive(user.lastSignInTime) ? 'Activo' : 'Inactivo'}
+                      {isOnline(user) ? 'En línea' : isActive(user) ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                 </tr>

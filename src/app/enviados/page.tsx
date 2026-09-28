@@ -7,6 +7,7 @@ import { collection, query, getDocs, limit } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import MachineCard from '@/components/MachineCard';
 import type { Machine } from '@/types';
+import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 
 const MAX_FETCH_LIMIT = 1000;
 const ITEMS_PER_PAGE = 24;
@@ -75,6 +76,7 @@ export default function EnviadosPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  useInactivityLogout(isAuthenticated);
 
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(false);

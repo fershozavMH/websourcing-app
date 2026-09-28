@@ -14,3 +14,20 @@ export const LOGS_PAGE_SIZE_MAX = 200;
 
 // Emails sembrados manualmente en Firestore (monitoreo_admins) antes del primer deploy.
 export const MONITOREO_BOOTSTRAP_ADMIN_EMAIL = 'sistemas@machineryhunters.com';
+
+// Presencia: última vez que un usuario con sesión abierta mostró actividad.
+// Firebase `lastSignInTime` no cambia cuando la sesión persiste, por eso se
+// lleva un registro propio.
+export const USER_PRESENCE_COLLECTION = 'user_presence';
+export const PRESENCE_PING_INTERVAL_MS = 5 * 60_000;
+export const PRESENCE_ONLINE_WINDOW_MS = 10 * 60_000;
+
+// Umbrales de alerta del tab "Salud del Sistema".
+export const STALE_DATA_WARN_HOURS = 12;
+export const STALE_DATA_CRIT_HOURS = 36;
+export const FAILED_LOGIN_ALERT_THRESHOLD = 5; // intentos fallidos en 24h por correo/IP
+
+// Retención de logs: cada log lleva `expireAt`; Firestore lo borra solo si se
+// activa una política TTL sobre ese campo en la colección system_logs.
+export const LOG_RETENTION_DAYS = 90;
+export const LOG_VOLUME_WARN_DOCS = 50_000;

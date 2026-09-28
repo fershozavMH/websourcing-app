@@ -3,7 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import '@/lib/firebase-admin';
 import { requireMonitoreoAdmin } from '@/lib/monitoreo/auth';
-import { SYSTEM_LOGS_COLLECTION } from '@/constants/monitoreo';
+import { SYSTEM_LOGS_COLLECTION, USER_PRESENCE_COLLECTION } from '@/constants/monitoreo';
 import { FIREBASE_COLLECTION } from '@/constants/appConfig';
 
 export async function GET(request: Request) {
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
   // Promise.allSettled: una fuente que falle (p.ej. falta de índice compuesto
   // en Firestore para la consulta de logs) no debe tumbar las otras dos.
-  const [userListResult, activityLogsResult, sentMachinesResult] = await Promise.allSettled([
+  const [userListResult, activityLogsResult, sentMachinesResult, presenceResult] = await Promise.allSettled([
     getAuth().listUsers(1000),
     getFirestore()
       .collection(SYSTEM_LOGS_COLLECTION)
@@ -24,16 +24,35 @@ export async function GET(request: Request) {
       .collection(FIREBASE_COLLECTION)
       .where('estado_sourcing', '==', 'enviado_erp')
       .get(),
+    getFirestore().collection(USER_PRESENCE_COLLECTION).get(),
   ]);
 
   const errors: string[] = [];
 
-  let users: Array<{ uid: string; email: string | null; lastSignInTime: string | null; creationTime: string | null }> = [];
+  const lastSeenByEmail = new Map<string, string>();
+  if (presenceResult.status === 'fulfilled') {
+    presenceResult.value.docs.forEach((doc) => {
+      const seen = doc.data().lastSeen?.toDate?.();
+      if (seen) lastSeenByEmail.set(doc.id.toLowerCase(), seen.toISOString());
+    });
+  } else {
+    console.error('[monitoreo/activity] presencia falló:', presenceResult.reason);
+    errors.push('No se pudo obtener la presencia de usuarios.');
+  }
+
+  let users: Array<{
+    uid: string;
+    email: string | null;
+    lastSignInTime: string | null;
+    lastSeen: string | null;
+    creationTime: string | null;
+  }> = [];
   if (userListResult.status === 'fulfilled') {
     users = userListResult.value.users.map((u) => ({
       uid: u.uid,
       email: u.email ?? null,
       lastSignInTime: u.metadata.lastSignInTime ?? null,
+      lastSeen: (u.email && lastSeenByEmail.get(u.email.toLowerCase())) || null,
       creationTime: u.metadata.creationTime ?? null,
     }));
   } else {

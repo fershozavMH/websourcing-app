@@ -2,6 +2,7 @@ import '@/lib/firebase-admin';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import {
   LOG_METADATA_MAX_LEN,
+  LOG_RETENTION_DAYS,
   LOG_MESSAGE_MAX_LEN,
   LOG_STACK_MAX_LEN,
   SYSTEM_LOGS_COLLECTION,
@@ -57,6 +58,7 @@ export async function writeLog(input: WriteLogInput): Promise<void> {
       userAgent: input.userAgent ? truncate(input.userAgent, 500) : null,
       ip: input.ip ?? null,
       metadata: safeMetadata(input.metadata),
+      expireAt: new Date(Date.now() + LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000),
     });
   } catch (err) {
     console.error('[monitoreo] writeLog failed', err);
