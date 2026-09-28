@@ -3,7 +3,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import '@/lib/firebase-admin';
 import { requireMonitoreoAdmin } from '@/lib/monitoreo/auth';
 import { SYSTEM_LOGS_COLLECTION } from '@/constants/monitoreo';
-import { FIREBASE_COLLECTION, SUBASTAS_COLLECTION } from '@/constants/appConfig';
+import { FIREBASE_COLLECTION, PORTAFOLIO_COLLECTION, SUBASTAS_COLLECTION } from '@/constants/appConfig';
 import { LOG_CODES } from '@/constants/logCodes';
 
 const DAYS = 14;
@@ -32,6 +32,18 @@ async function lastTimestamp(collection: string, field: string): Promise<string 
   const snap = await getFirestore().collection(collection).orderBy(field, 'desc').limit(1).get();
   if (snap.empty) return null;
   return toDate(snap.docs[0].data()[field])?.toISOString() ?? null;
+}
+
+// Clasificación gruesa del user agent — solo para agrupar, no para detección
+// precisa de versión. El orden importa: Edge/Opera incluyen "Chrome" en su UA.
+function browserFromUserAgent(ua: string | null | undefined): string {
+  if (!ua) return 'Desconocido';
+  if (/Edg\//.test(ua)) return 'Edge';
+  if (/OPR\//.test(ua)) return 'Opera';
+  if (/Chrome\//.test(ua)) return 'Chrome';
+  if (/Firefox\//.test(ua)) return 'Firefox';
+  if (/Safari\//.test(ua) && !/Chrome\//.test(ua)) return 'Safari';
+  return 'Otro';
 }
 
 export async function GET(request: Request) {
@@ -70,6 +82,9 @@ export async function GET(request: Request) {
     erpProductivity,
     mvpProductivity,
     upcomingAuctions,
+    machinesCount,
+    portafolioCount,
+    subastasCount,
   ] = await Promise.allSettled([
     logsFor('error'),
     logsFor('security'),
@@ -85,6 +100,9 @@ export async function GET(request: Request) {
     // Timestamp o como string según lo que haya escrito el scraper, y
     // Firestore no compara rangos entre tipos distintos. Se filtra en memoria.
     db.collection(SUBASTAS_COLLECTION).where('estado', '!=', 'cerrada').limit(2000).get(),
+    db.collection(FIREBASE_COLLECTION).count().get(),
+    db.collection(PORTAFOLIO_COLLECTION).count().get(),
+    db.collection(SUBASTAS_COLLECTION).count().get(),
   ]);
 
   const days: string[] = [];
@@ -99,6 +117,8 @@ export async function GET(request: Request) {
   const errorsByCode = new Map<string, number>();
   let credentialFallbacks = 0;
   const credentialMissing = new Map<string, { count: number; last: number }>();
+  const browserCounts = new Map<string, number>();
+  const imageErrorsBySource = new Map<string, number>();
 
   if (erpSent.status === 'fulfilled') {
     erpSent.value.docs.forEach((d) => {
@@ -127,8 +147,14 @@ export async function GET(request: Request) {
       const at = toDate(data.timestamp);
       const k = at ? dayKey(at) : null;
       errorsByCode.set(data.code, (errorsByCode.get(data.code) ?? 0) + 1);
+      const browser = browserFromUserAgent(data.userAgent);
+      browserCounts.set(browser, (browserCounts.get(browser) ?? 0) + 1);
       if (k && data.code === LOG_CODES.ERR_ERP_SEND && k in erpFail) erpFail[k]++;
       if (k && data.code === LOG_CODES.ERR_MVP_SEND && k in mvpFail) mvpFail[k]++;
+      if (data.code === LOG_CODES.ERR_IMAGE_LOAD) {
+        const fuente = data.metadata?.pagina || 'Desconocida';
+        imageErrorsBySource.set(fuente, (imageErrorsBySource.get(fuente) ?? 0) + 1);
+      }
       if (data.code === LOG_CODES.ERR_ERP_CREDENTIALS_MISSING) {
         credentialFallbacks++;
         const who = data.userEmail ?? 'desconocido';
@@ -165,6 +191,8 @@ export async function GET(request: Request) {
       const at = toDate(data.timestamp);
       if (!at) return;
       const k = dayKey(at);
+      const browser = browserFromUserAgent(data.userAgent);
+      browserCounts.set(browser, (browserCounts.get(browser) ?? 0) + 1);
       if (data.code === LOG_CODES.SEC_LOGIN_FAILED) {
         if (k in failedByDay) failedByDay[k]++;
         if (at.getTime() >= cutoff24h) {
@@ -315,6 +343,17 @@ export async function GET(request: Request) {
     },
     productivity: { weeks: weeks.map((w) => w.slice(5)), byUser: productivityByUser },
     pendingAuctions,
+    browserErrors: Array.from(browserCounts.entries())
+      .map(([browser, total]) => ({ browser, total }))
+      .sort((a, b) => b.total - a.total),
+    imageErrorsBySource: Array.from(imageErrorsBySource.entries())
+      .map(([fuente, total]) => ({ fuente, total }))
+      .sort((a, b) => b.total - a.total),
+    collectionSizes: {
+      maquinas: machinesCount.status === 'fulfilled' ? machinesCount.value.data().count : null,
+      portafolio: portafolioCount.status === 'fulfilled' ? portafolioCount.value.data().count : null,
+      subastas: subastasCount.status === 'fulfilled' ? subastasCount.value.data().count : null,
+    },
     errors,
   });
 }

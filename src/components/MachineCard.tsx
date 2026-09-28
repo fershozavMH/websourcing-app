@@ -13,6 +13,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [enviandoMvp, setEnviandoMvp] = useState(false);
+  const [imgErrorReported, setImgErrorReported] = useState(false);
 
   const isYellow = YELLOW_CATEGORIES.includes(machine.categoria_tarea);
 
@@ -242,6 +243,15 @@ export default function MachineCard({ machine }: { machine: Machine }) {
               alt={`${machine.titulo} - imagen ${imgIndex + 1} de ${imageCount}`}
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               loading="lazy"
+              onError={() => {
+                // Una vez por tarjeta: evita inundar los logs si varias imágenes
+                // de la misma máquina están rotas o el usuario navega el carrusel.
+                if (imgErrorReported) return;
+                setImgErrorReported(true);
+                logError(LOG_CODES.ERR_IMAGE_LOAD, 'No se pudo cargar una imagen del equipo', {
+                  metadata: { machineId: machine.id, pagina: machine.pagina, url: machine.imagenes[imgIndex] },
+                });
+              }}
             />
 
             {imageCount > 1 && (

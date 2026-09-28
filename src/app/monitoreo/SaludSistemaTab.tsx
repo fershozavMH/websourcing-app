@@ -40,6 +40,9 @@ interface HealthData {
     byUser: Array<{ usuario: string; series: Array<{ semana: string; erp: number; mvp: number }>; total: number }>;
   };
   pendingAuctions: Array<{ id: string; titulo: string; fecha_subasta: string | null; fuente: string | null }>;
+  browserErrors: Array<{ browser: string; total: number }>;
+  imageErrorsBySource: Array<{ fuente: string; total: number }>;
+  collectionSizes: { maquinas: number | null; portafolio: number | null; subastas: number | null };
   errors: string[];
 }
 
@@ -307,6 +310,30 @@ export default function SaludSistemaTab() {
           </div>
 
           <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Tamaño de colecciones</h3>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-black text-slate-800">
+                  {data.collectionSizes.maquinas?.toLocaleString('es-MX') ?? '—'}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Máquinas aprobadas</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-800">
+                  {data.collectionSizes.portafolio?.toLocaleString('es-MX') ?? '—'}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Portafolio</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-800">
+                  {data.collectionSizes.subastas?.toLocaleString('es-MX') ?? '—'}
+                </p>
+                <p className="text-xs text-slate-500 mt-1">Subastas</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
             <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">Últimos fallos de envío</h3>
             {data.recentErrors.length === 0 ? (
               <p className="text-sm text-slate-500">Sin fallos de envío en los últimos 14 días.</p>
@@ -454,6 +481,49 @@ export default function SaludSistemaTab() {
                           {i.count}
                         </td>
                         <td className="py-1.5 px-2 text-slate-500">{new Date(i.last).toLocaleTimeString('es-MX')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-4">
+                Errores y seguridad por navegador (14 d)
+              </h3>
+              {data.browserErrors.length === 0 ? (
+                <p className="text-sm text-slate-500">Sin eventos registrados.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <tbody>
+                    {data.browserErrors.map((b) => (
+                      <tr key={b.browser} className="border-b border-slate-100">
+                        <td className="py-1.5 px-2 text-slate-700">{b.browser}</td>
+                        <td className="py-1.5 px-2 text-right font-bold text-slate-800">{b.total}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
+              <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">
+                Imágenes rotas por fuente (14 d)
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">Indica qué sitio scrapeado cambió su formato de imágenes.</p>
+              {data.imageErrorsBySource.length === 0 ? (
+                <p className="text-sm text-slate-500">Sin imágenes rotas registradas.</p>
+              ) : (
+                <table className="w-full text-sm">
+                  <tbody>
+                    {data.imageErrorsBySource.map((f) => (
+                      <tr key={f.fuente} className="border-b border-slate-100">
+                        <td className="py-1.5 px-2 text-slate-700">{f.fuente}</td>
+                        <td className="py-1.5 px-2 text-right font-bold text-slate-800">{f.total}</td>
                       </tr>
                     ))}
                   </tbody>
