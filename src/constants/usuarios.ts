@@ -10,4 +10,9 @@ export const NOMBRES_USUARIOS: Record<string, string> = {
   'carlos@machineryhunters.com': 'Carlos Campillo',
   'jonathan@machineryhunters.com': 'Jonathan',
   'aurelio@machineryhunters.com': 'Aurelio Bermudez',
+  'daray@machineryhunters.com': 'Daray Arrellano',
+  'gabriel@machineryhunters.com': 'Gabriel Buchanan',
+  'carel@machineryhunters.com': 'Carel Medina',
+  'marketing@machineryhunters.com': 'Marketing',
+  'info@machineryhunters.com': 'Info',
 };
