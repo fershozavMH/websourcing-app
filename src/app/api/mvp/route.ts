@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       throw new RequestError('Equipo no encontrado en Firestore.');
     }
 
-    const payload = mapToMhApi(docId, docSnap.data() as Record<string, any>);
+    const payload = mapToMhApi(docId, docSnap.data() as Record<string, any>, { name: guard.name, email: guard.email });
 
     const responseMh = await fetch(apiUrl, {
       method: 'POST',

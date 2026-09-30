@@ -5,6 +5,7 @@ import { getClientIp } from '@/lib/monitoreo/auth';
 import { writeLog } from '@/lib/monitoreo/writeLog';
 import { isRateLimited } from '@/lib/monitoreo/rateLimit';
 import { LOG_CODES } from '@/constants/logCodes';
+import { NOMBRES_USUARIOS } from '@/constants/usuarios';
 
 interface RequireUserResult {
   ok: true;
@@ -24,7 +25,10 @@ async function verifyToken(request: Request): Promise<{ email: string; name: str
     const decoded = await getAuth().verifyIdToken(match[1]);
     if (!decoded.email) return null;
     const email = decoded.email.toLowerCase();
-    return { email, name: (decoded.name as string | undefined) || email };
+    // Prioriza el mapa fijo de nombres sobre el displayName de Firebase (que
+    // muchas cuentas no tienen configurado) y, como último recurso, el correo.
+    const name = NOMBRES_USUARIOS[email] || (decoded.name as string | undefined) || email;
+    return { email, name };
   } catch {
     return null;
   }

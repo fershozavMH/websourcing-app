@@ -84,7 +84,11 @@ const FEATURES_MAP: Array<[string, string]> = [
   ['tiene_ripper', 'Ripper'],
 ];
 
-export function mapToMhApi(docId: string, doc: Record<string, any>): Record<string, any> {
+export function mapToMhApi(
+  docId: string,
+  doc: Record<string, any>,
+  sender?: { name: string; email: string },
+): Record<string, any> {
   const technicalSpecs: Record<string, any> = {};
   for (const [origen, destino] of TECHNICAL_SPECS_MAP) {
     if (doc[origen] !== undefined && doc[origen] !== null) {
@@ -126,6 +130,9 @@ export function mapToMhApi(docId: string, doc: Record<string, any>): Record<stri
     sellerContact: doc.telefono_vendedor,
     isAuction: doc.es_subasta ?? false,
     lastSyncedAt: new Date().toISOString(),
+    // Quién lo envió desde WebSourcing, para trazabilidad del lado del MVP.
+    submittedByName: sender?.name,
+    submittedByEmail: sender?.email,
     ...(Object.keys(technicalSpecs).length > 0 && { technicalSpecs }),
     features,
   };
