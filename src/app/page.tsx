@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import Filters from '@/components/Filters';
@@ -19,6 +20,9 @@ import { ITEMS_PER_PAGE } from '@/constants/appConfig';
 import type { SortOption } from '@/types';
 import { logActivity } from '@/lib/logger';
 import { LOG_CODES } from '@/constants/logCodes';
+
+// Carga diferida: evita meter recharts en el bundle inicial del catálogo
+const CategoryChart = dynamic(() => import('@/components/CategoryChart'), { ssr: false });
 
 const SkeletonCard = () => (
   <div className="bg-white rounded-xl border border-slate-200 overflow-hidden animate-pulse">
@@ -316,6 +320,7 @@ function CatalogApp() {
               )}
             </p>
           </div>
+          <CategoryChart onSelectCategory={handleSelectCategory} />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-y-16 gap-x-8">
             {CATEGORIAS_INICIO.map((cat) => (
               <button key={cat.id} onClick={() => handleSelectCategory(cat.id)} className="flex flex-col items-center justify-center text-center group cursor-pointer">

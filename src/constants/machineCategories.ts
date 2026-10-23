@@ -38,6 +38,26 @@ export const TRACTOCAMION_SUBTYPES: ReadonlyArray<string> = [
   CAT.DAY_CAB,
 ];
 
+// Categorías que se cuentan en la gráfica de estadísticas (Tractocamiones agrupa sus subtipos)
+export const STATS_CATEGORIES: ReadonlyArray<string> = [
+  CAT.EXCAVADORAS,
+  CAT.RETROEXCAVADORAS,
+  CAT.TOPADORES,
+  CAT.CARGADORES,
+  CAT.MOTOCONFORMADORAS,
+  CAT.CAMIONES_VOLTEO,
+  CAT.CAMIONES_TROMPO,
+  CAT.CAMIONES_PIPA,
+  CAT.TRACTOCAMIONES,
+  CAT.GRUAS_TITANES,
+  CAT.GRUAS_ARTICULADAS,
+  CAT.BOMBAS,
+  CAT.ELEVADORES,
+  CAT.ROUGH_TERRAIN,
+  CAT.ALL_TERRAIN,
+  CAT.COMPACTADORAS,
+];
+
 export const TRUCK_CATEGORIES: ReadonlyArray<string> = [
   CAT.CAMIONES_VOLTEO,
   CAT.CAMIONES_TROMPO,
