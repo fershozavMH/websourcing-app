@@ -136,6 +136,44 @@ const getSubastaSite = (pagina: string): string => {
   return 'Otro';
 };
 
+// Imágenes que se adjuntan al MH Equipo (la primera también pasa a ser custom_image)
+const MAX_IMAGENES   = 16;
+const IMAGEN_PRIVADA = '0';
+
+// Descarga una imagen y la sube a Frappe como adjunto del MH Equipo (POST /api/method/upload_file).
+// Devuelve el file_url que asigna Frappe (ej. "/files/EQUI-000001-1.jpg").
+const subirImagenAFrappe = async (
+  uploadUrl: string,
+  authHeader: string,
+  docname: string,
+  imagenUrl: string,
+  indice: number,
+): Promise<string> => {
+  const imgRes = await fetch(imagenUrl, { signal: AbortSignal.timeout(20000) });
+  if (!imgRes.ok) throw new Error(`No se pudo descargar la imagen (${imgRes.status})`);
+
+  const contentType = imgRes.headers.get('content-type')?.split(';')[0] || 'image/jpeg';
+  const ext = contentType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+  const blob = await imgRes.blob();
+
+  const form = new FormData();
+  form.append('file', blob, `${docname}-${indice}.${ext}`);
+  form.append('doctype', 'MH Equipo');
+  form.append('docname', docname);
+  form.append('is_private', IMAGEN_PRIVADA);
+
+  const upRes = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: { 'Authorization': authHeader, 'Accept': 'application/json' },
+    body: form,
+  });
+  if (!upRes.ok) throw new Error(`Frappe rechazó la imagen (${upRes.status}): ${(await upRes.text()).slice(0, 200)}`);
+
+  const fileUrl = (await upRes.json().catch(() => null))?.message?.file_url;
+  if (typeof fileUrl !== 'string' || !fileUrl) throw new Error('Frappe no devolvió el file_url de la imagen');
+  return fileUrl;
+};
+
 // Errores de validación cuyo mensaje sí es seguro mostrar al cliente.
 class RequestError extends Error {}
 
@@ -390,6 +428,52 @@ ENVIADO POR: ${usuarioSourcing}`;
     const frappeResult = await responseFrappe.json();
     const idFrappe = frappeResult?.data?.name ?? frappeResult?.name;
 
+    // Subir todas las imágenes a Frappe y luego apuntar custom_image a la primera ya almacenada en el ERP.
+    // Un fallo aquí no invalida el envío ya creado; si la primera no se sube, custom_image conserva el link original.
+    const imagenes: string[] = Array.isArray(maquina.imagenes)
+      ? maquina.imagenes.filter((u: unknown) => typeof u === 'string' && u).slice(0, MAX_IMAGENES)
+      : [];
+    let imagenesSubidas = 0;
+    if (idFrappe && imagenes.length > 0) {
+      const uploadUrl  = `${new URL(apiUrl).origin}/api/method/upload_file`;
+      const authHeader = `token ${apiKey}:${apiSecret}`;
+      const resultados = await Promise.allSettled(
+        imagenes.map((url, i) => subirImagenAFrappe(uploadUrl, authHeader, idFrappe, url, i + 1)),
+      );
+      const fallidas: { url: string; error: string }[] = [];
+      resultados.forEach((r, i) => {
+        if (r.status === 'rejected') fallidas.push({ url: imagenes[i], error: String(r.reason?.message ?? r.reason) });
+      });
+      imagenesSubidas = resultados.length - fallidas.length;
+
+      const principal = resultados[0];
+      if (principal.status === 'fulfilled') {
+        try {
+          const putRes = await fetch(`${apiUrl}/${encodeURIComponent(idFrappe)}`, {
+            method: 'PUT',
+            headers: { 'Authorization': authHeader, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ custom_image: principal.value }),
+          });
+          if (!putRes.ok) throw new Error(`Frappe rechazó custom_image (${putRes.status}): ${(await putRes.text()).slice(0, 200)}`);
+        } catch (e: any) {
+          fallidas.push({ url: imagenes[0], error: `No se pudo asignar custom_image: ${e?.message ?? e}` });
+        }
+      }
+
+      if (fallidas.length > 0) {
+        await writeLog({
+          level: 'error',
+          category: 'error',
+          code: LOG_CODES.ERR_ERP_IMAGE_UPLOAD_FAILED,
+          message: `${fallidas.length} de ${resultados.length} imágenes no se subieron al ERP (${idFrappe})`,
+          source: 'server',
+          route: '/api/erp',
+          userEmail,
+          metadata: { machineId: maquina.id, idFrappe, fallidas },
+        });
+      }
+    }
+
     // Actualizar Firebase para trazabilidad
     try {
       await db.collection(FIREBASE_COLLECTION).doc(machineId).update({
@@ -427,6 +511,7 @@ ENVIADO POR: ${usuarioSourcing}`;
     return NextResponse.json({
       success: true,
       id_erp:  idFrappe,
+      imagenes_subidas: imagenesSubidas,
       audit:   `Enviado por ${usuarioSourcing}`,
     });
 
