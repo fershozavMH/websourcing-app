@@ -544,6 +544,29 @@ Todo lo demás                            → campo omitido (no se envía)
 | UsedConcretePumps | `"2007 38M PUTZMEISTER ON A 2007 MACK"` | `PUTZMEISTER` | `38M` | Del campo `capacidad` |
 | ConcretePumpDepot | `"2006 Alliance JXR33-4.16"` | `Alliance` | `JXR33-4.16` | Del campo `capacidad` |
 
+### `GET /api/agente/maquinaria` — API de solo lectura para agentes
+
+Endpoint consumido por el agente de Marketing para consultar la maquinaria de `maquinaria_aprobada`. No requiere sesión de Firebase; se autentica con `AGENT_API_KEY`.
+
+```bash
+curl "https://<dominio-produccion>/api/agente/maquinaria?categoria=Excavadoras&marca=caterpillar&limit=5" \
+  -H "Authorization: Bearer $AGENT_API_KEY"
+# también acepta: -H "x-api-key: $AGENT_API_KEY"
+```
+
+| Query param | Descripción |
+|---|---|
+| `categoria` | Categoría exacta (sin importar mayúsculas): Excavadoras, Retroexcavadoras, Topadores, Cargadores, Motoconformadoras, Camiones Volteo, Camiones Trompo, Camiones Pipa, Tractocamiones, Gruas Titanes, Gruas Articuladas, Bombas, Elevadores, Rough Terrain, All Terrain, Compactadoras. Omitir = todas. Inválida → 400 con `categorias_validas`. |
+| `marca` / `modelo` | Texto que contenga (busca también en el título) |
+| `ubicacion` | Texto que contenga (ciudad, estado o país) |
+| `anio_min` | Año mínimo |
+| `precio_max` | Precio máximo en USD; las máquinas sin precio no se descartan |
+| `limit` / `offset` | Paginación (default 10, máx 50) |
+
+Respuesta: `{ success, total, count, offset, items[] }`. Cada item expone solo campos públicos (`id, titulo, categoria, marca, modelo, anio, precio, ubicacion, uso_horas, uso_millas, motor, transmision, combustible, capacidad, alcance, imagen_principal, url, pagina, es_subasta, subasta_cierre, actualizado`); `precio: null` significa "Consultar precio". Nunca se exponen teléfono del vendedor, márgenes ni trazabilidad ERP/MVP.
+
+Notas: filtra en memoria sobre las 1000 máquinas más recientes de la categoría, con caché de 5 min por instancia. Errores: 401 (key inválida, se registra en Monitoreo), 429 (rate limit), 503 (`AGENT_API_KEY` no configurada).
+
 ---
 
 ## 11. Seguridad
@@ -556,6 +579,7 @@ Todo lo demás                            → campo omitido (no se envía)
 | API Route `/api/erp` | Lectura y escritura de `maquinaria_aprobada` (server-side) | Firebase Admin SDK con Service Account |
 | Scraper backend (Python) | Lectura, escritura y eliminación total | Service Account (credenciales privadas) |
 | ERP Frappe | Creación y consulta de `MH Equipo` | API Key + Secret (token auth) |
+| Agente de Marketing | Solo lectura de `maquinaria_aprobada` (campos públicos) vía `GET /api/agente/maquinaria` | `AGENT_API_KEY` (Bearer o `x-api-key`) |
 
 - Las claves de Firebase Client SDK (`NEXT_PUBLIC_*`) son seguras porque las Firestore Security Rules restringen las operaciones permitidas desde el browser.
 - El Firebase Admin SDK (`firebase-admin`) corre **solo en el servidor** (Next.js API Route) y usa credenciales de Service Account, nunca expuestas al browser.
@@ -589,6 +613,9 @@ ERP_API_SECRET=
 # Página Web MVP (solo servidor — NO NEXT_PUBLIC_)
 MH_API_URL=                           # Endpoint REST del MVP que recibe equipos
 MH_API_KEY=                           # Token Bearer
+
+# API para agentes externos (solo servidor — NO NEXT_PUBLIC_)
+AGENT_API_KEY=                        # Key que usa el agente de Marketing (openssl rand -hex 32)
 ```
 
 Para despliegue en Vercel, todas las variables deben configurarse en **Settings > Environment Variables**. Las variables `FIREBASE_ADMIN_*` y `ERP_*` deben ser **server-only** (sin el prefijo `NEXT_PUBLIC_`).
