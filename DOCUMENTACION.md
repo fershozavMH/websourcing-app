@@ -544,28 +544,55 @@ Todo lo demás                            → campo omitido (no se envía)
 | UsedConcretePumps | `"2007 38M PUTZMEISTER ON A 2007 MACK"` | `PUTZMEISTER` | `38M` | Del campo `capacidad` |
 | ConcretePumpDepot | `"2006 Alliance JXR33-4.16"` | `Alliance` | `JXR33-4.16` | Del campo `capacidad` |
 
-### `GET /api/agente/maquinaria` — API de solo lectura para agentes
+### `GET /api/sch/equipos` — Búsqueda de equipos para el agente SCH (GoHighLevel)
 
-Endpoint consumido por el agente de Marketing para consultar la maquinaria de `maquinaria_aprobada`. No requiere sesión de Firebase; se autentica con `AGENT_API_KEY`.
+Endpoint consumido por el "Asistente SCH" de GoHighLevel (Conversation AI → Actions → API Call). Devuelve hasta 3 equipos compatibles de `maquinaria_aprobada`, priorizando estados definidos. No requiere sesión de Firebase; se autentica con `AGENT_API_KEY` (header `x-api-key` o `Authorization: Bearer`). Código: `src/app/api/sch/equipos/route.ts` + `src/lib/sch/`.
 
 ```bash
-curl "https://<dominio-produccion>/api/agente/maquinaria?categoria=Excavadoras&marca=caterpillar&limit=5" \
-  -H "Authorization: Bearer $AGENT_API_KEY"
-# también acepta: -H "x-api-key: $AGENT_API_KEY"
+curl "https://websourcing-app.vercel.app/api/sch/equipos?tipo_equipo=grua_titan&capacidad=23&estados_prioritarios=AZ,CA,CO,NV,NM,TX&limite=3" \
+  -H "x-api-key: $AGENT_API_KEY"
 ```
 
-| Query param | Descripción |
-|---|---|
-| `categoria` | Categoría exacta (sin importar mayúsculas): Excavadoras, Retroexcavadoras, Topadores, Cargadores, Motoconformadoras, Camiones Volteo, Camiones Trompo, Camiones Pipa, Tractocamiones, Gruas Titanes, Gruas Articuladas, Bombas, Elevadores, Rough Terrain, All Terrain, Compactadoras. Omitir = todas. Inválida → 400 con `categorias_validas`. |
-| `marca` / `modelo` | Texto que contenga (busca también en el título) |
-| `ubicacion` | Texto que contenga (ciudad, estado o país) |
-| `anio_min` | Año mínimo |
-| `precio_max` | Precio máximo en USD; las máquinas sin precio no se descartan |
-| `limit` / `offset` | Paginación (default 10, máx 50) |
+| Query param | Tipo | Descripción |
+|---|---|---|
+| `tipo_equipo` | texto, requerido | Slug de la tabla de abajo (también acepta el nombre o la categoría interna, sin importar mayúsculas/acentos). Inválido → 400 con `tipos_validos`. |
+| `capacidad` | número, opcional | Capacidad requerida, en la unidad de la categoría. Compatible = **≥ requerida y ≤ 1.5× requerida**. |
+| `estados_prioritarios` | texto, opcional | Abreviaturas separadas por coma. Default `AZ,CA,CO,NV,NM,TX`. |
+| `limite` | número, opcional | Default 3, máx 10. |
 
-Respuesta: `{ success, total, count, offset, items[] }`. Cada item expone solo campos públicos (`id, titulo, categoria, marca, modelo, anio, precio, ubicacion, uso_horas, uso_millas, motor, transmision, combustible, capacidad, alcance, imagen_principal, url, pagina, es_subasta, subasta_cierre, actualizado`); `precio: null` significa "Consultar precio". Nunca se exponen teléfono del vendedor, márgenes ni trazabilidad ERP/MVP.
+| `tipo_equipo` | Categoría Web Sourcing | Unidad de capacidad |
+|---|---|---|
+| `grua_titan` | Gruas Titanes | Ton |
+| `grua_articulada` | Gruas Articuladas | Ton |
+| `grua_rough_terrain` | Rough Terrain | Ton |
+| `grua_todo_terreno` | All Terrain | Ton |
+| `bomba_concreto_camion` | Bombas (pluma montada) | m (alcance de pluma; ft se convierte) |
+| `bomba_concreto_estacionaria` | Bombas (BSA/SP/trailer/stationary en el título) | m |
+| `camion_revolvedor` | Camiones Trompo | Yd |
+| `camion_pipa` | Camiones Pipa | Gal |
+| `camion_volteo` | Camiones Volteo | Yd |
+| `elevador` | Elevadores | lbs |
+| `tractocamion` | Sleeper, Day cab | — |
+| `retroexcavadora`, `excavadora`, `topador`, `cargador`, `motoconformadora`, `compactadora` | La categoría correspondiente | — |
+| `maquinaria_pesada` | Las seis anteriores | — |
 
-Notas: filtra en memoria sobre las 1000 máquinas más recientes de la categoría, con caché de 5 min por instancia. Errores: 401 (key inválida, se registra en Monitoreo), 429 (rate limit), 503 (`AGENT_API_KEY` no configurada).
+**Reglas:**
+- Con unidad "—" la categoría no registra capacidad: el filtro no se aplica y la respuesta trae `capacidad_aplicada: false`.
+- En categorías con unidad, un equipo sin capacidad legible en esa unidad no se considera compatible (no se adivina).
+- Solo se consideran equipos en EE. UU. con estado identificable (`ubicacion` "Ciudad, Estado", nombre o abreviatura).
+- Orden: estados prioritarios primero; el resto de EE. UU. solo completa hasta `limite` (`busqueda_ampliada: true`). Dentro de cada grupo: aprobados, capacidad más cercana, más reciente.
+- Publicaciones duplicadas (misma categoría, marca, modelo, año, ubicación y capacidad) se devuelven una sola vez.
+- `aprobado_para_mostrar` = `enviado_mvp === true` (publicado en machineryhunters.com); lo demás es `pendiente_validacion`.
+- El montaje de bombas se infiere del título (el scraper no lo registra). Hoy todas las bombas registradas son de pluma sobre camión.
+
+**Respuesta:** `{ status, mensaje, tipo_equipo, capacidad_solicitada, capacidad_unidad, capacidad_aplicada, busqueda_ampliada, total_encontrados, equipos[] }`.
+`status`: `resultados` (al menos un aprobado) · `pendiente_validacion` (hay compatibles, ninguno aprobado) · `sin_resultados` (`equipos: []`) · `error` (400/401/429/500/503, con `mensaje` y `equipos: []`).
+
+Cada equipo: `id_equipo, tipo_equipo, tipo_equipo_nombre, marca, modelo, anio, capacidad, capacidad_valor, capacidad_unidad, ubicacion_ciudad, ubicacion_estado, ubicacion_pais, aprobado_para_mostrar, estado_validacion, url_publica, imagen_publica`. `url_publica` e `imagen_publica` van en `null` (no se guarda la URL de machineryhunters.com y las fotos son de los sitios proveedores).
+
+**Nunca se exponen** (se excluyen en el servidor): `precio` (costo real de adquisición), `precio_maximo`, `url`, `pagina`, `titulo` (puede incluir el sitio proveedor), `telefono_vendedor`, `imagenes`, márgenes/score y trazabilidad ERP/MVP. Si la ciudad trae el nombre del vendedor ("VENDEDOR – Ciudad") se recorta.
+
+Caché en memoria de 5 min por categoría. Rate limit: 20 solicitudes/min. Los 401 se registran en Monitoreo.
 
 ---
 
@@ -579,7 +606,7 @@ Notas: filtra en memoria sobre las 1000 máquinas más recientes de la categorí
 | API Route `/api/erp` | Lectura y escritura de `maquinaria_aprobada` (server-side) | Firebase Admin SDK con Service Account |
 | Scraper backend (Python) | Lectura, escritura y eliminación total | Service Account (credenciales privadas) |
 | ERP Frappe | Creación y consulta de `MH Equipo` | API Key + Secret (token auth) |
-| Agente de Marketing | Solo lectura de `maquinaria_aprobada` (campos públicos) vía `GET /api/agente/maquinaria` | `AGENT_API_KEY` (Bearer o `x-api-key`) |
+| Agente SCH (GoHighLevel) | Solo lectura de `maquinaria_aprobada` (sin costos ni datos de proveedor) vía `GET /api/sch/equipos` | `AGENT_API_KEY` (`x-api-key` o Bearer) |
 
 - Las claves de Firebase Client SDK (`NEXT_PUBLIC_*`) son seguras porque las Firestore Security Rules restringen las operaciones permitidas desde el browser.
 - El Firebase Admin SDK (`firebase-admin`) corre **solo en el servidor** (Next.js API Route) y usa credenciales de Service Account, nunca expuestas al browser.
@@ -615,7 +642,7 @@ MH_API_URL=                           # Endpoint REST del MVP que recibe equipos
 MH_API_KEY=                           # Token Bearer
 
 # API para agentes externos (solo servidor — NO NEXT_PUBLIC_)
-AGENT_API_KEY=                        # Key que usa el agente de Marketing (openssl rand -hex 32)
+AGENT_API_KEY=                        # Key del agente SCH de GoHighLevel (openssl rand -hex 32)
 ```
 
 Para despliegue en Vercel, todas las variables deben configurarse en **Settings > Environment Variables**. Las variables `FIREBASE_ADMIN_*` y `ERP_*` deben ser **server-only** (sin el prefijo `NEXT_PUBLIC_`).

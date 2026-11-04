@@ -15,6 +15,11 @@ function extractKey(request: Request): string {
   return (request.headers.get('x-api-key') ?? '').trim();
 }
 
+// Mismo formato de error que las respuestas de la API del agente, para que
+// nunca tenga que adivinar si la consulta falló.
+const errorResponse = (mensaje: string, status: number) =>
+  NextResponse.json({ status: 'error', mensaje, equipos: [] }, { status });
+
 function keysMatch(provided: string, expected: string): boolean {
   const a = Buffer.from(provided);
   const b = Buffer.from(expected);
@@ -29,10 +34,7 @@ export async function requireAgentApiKey(request: Request): Promise<RequireApiKe
   const expected = process.env.AGENT_API_KEY ?? '';
   if (!expected) {
     console.error('[agente] AGENT_API_KEY no está configurada');
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: 'Servicio no disponible.' }, { status: 503 }),
-    };
+    return { ok: false, response: errorResponse('Servicio no disponible.', 503) };
   }
 
   const provided = extractKey(request);
@@ -47,17 +49,11 @@ export async function requireAgentApiKey(request: Request): Promise<RequireApiKe
       ip: getClientIp(request),
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: 'No autenticado.' }, { status: 401 }),
-    };
+    return { ok: false, response: errorResponse('No autenticado.', 401) };
   }
 
   if (isRateLimited(`${route}:agente`)) {
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: 'Demasiadas solicitudes. Intenta de nuevo en un minuto.' }, { status: 429 }),
-    };
+    return { ok: false, response: errorResponse('Demasiadas solicitudes. Intenta de nuevo en un minuto.', 429) };
   }
 
   return { ok: true };
