@@ -7,13 +7,22 @@ import { CAT, YELLOW_CATEGORIES, TRACTOCAMION_SUBTYPES } from '@/constants/machi
 import { CURRENCY_LOCALE, CURRENCY, BADGE_COLOR } from '@/constants/appConfig';
 import { logError } from '@/lib/logger';
 import { LOG_CODES } from '@/constants/logCodes';
+import { useAprobacionesSch } from '@/hooks/useAprobacionesSch';
+
+const formatFechaCorta = (iso: string) =>
+  new Date(iso).toLocaleDateString('es-MX', { day: '2-digit', month: '2-digit' });
 
 export default function MachineCard({ machine }: { machine: Machine }) {
   const [imgIndex, setImgIndex] = useState(0);
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [enviandoMvp, setEnviandoMvp] = useState(false);
+  const [guardandoSch, setGuardandoSch] = useState(false);
   const [imgErrorReported, setImgErrorReported] = useState(false);
+  const { puedeAprobar, aprobaciones, cambiarAprobacion } = useAprobacionesSch();
+  const aprobacionVista = aprobaciones[machine.id];
+  // Una aprobación que vence con la página abierta deja de mostrarse.
+  const aprobacionSch = aprobacionVista && new Date(aprobacionVista.venceEn).getTime() > Date.now() ? aprobacionVista : undefined;
 
   const isYellow = YELLOW_CATEGORIES.includes(machine.categoria_tarea);
 
@@ -147,6 +156,23 @@ export default function MachineCard({ machine }: { machine: Machine }) {
     }
   };
 
+  // Aprobación para que el agente SCH pueda ofrecer el equipo a prospectos.
+  const cambiarAprobacionSch = async (e: React.MouseEvent, accion: 'aprobar' | 'quitar') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setGuardandoSch(true);
+    try {
+      const error = await cambiarAprobacion(machine.id, accion);
+      if (error) alert(`Error: ${error}`);
+    } catch (error) {
+      console.error(error);
+      alert('Hubo un problema de conexión con el servidor.');
+    } finally {
+      setGuardandoSch(false);
+      setMenuAbierto(false);
+    }
+  };
+
   const formattedPrice = formatPrice(machine.precio);
 
   return (
@@ -229,6 +255,29 @@ export default function MachineCard({ machine }: { machine: Machine }) {
                 </>
               )}
             </button>
+
+            {puedeAprobar && (
+              <>
+                <button
+                  onClick={(e) => cambiarAprobacionSch(e, 'aprobar')}
+                  disabled={guardandoSch}
+                  className="w-full text-left px-4 py-3 text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border-t border-slate-100 text-slate-700 hover:bg-orange-50"
+                >
+                  <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                  {guardandoSch ? 'Guardando…' : aprobacionSch ? 'Renovar aprobación SCH' : 'Aprobar para agente SCH'}
+                </button>
+                {aprobacionSch && (
+                  <button
+                    onClick={(e) => cambiarAprobacionSch(e, 'quitar')}
+                    disabled={guardandoSch}
+                    className="w-full text-left px-4 py-3 text-xs font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-red-600 hover:bg-red-50"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    Quitar aprobación SCH
+                  </button>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -292,6 +341,18 @@ export default function MachineCard({ machine }: { machine: Machine }) {
         <h4 className="font-bold text-slate-800 text-base leading-snug mb-2 line-clamp-2" title={machine.titulo}>
           {machine.titulo}
         </h4>
+
+        {aprobacionSch && (
+          <div className="mb-2">
+            <span
+              className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-200"
+              title={`Aprobado por ${aprobacionSch.aprobadoPor}`}
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+              Aprobado SCH · vence {formatFechaCorta(aprobacionSch.venceEn)}
+            </span>
+          </div>
+        )}
 
         {/* Score IA (sourcing) */}
         {(machine as any).score_ia && (

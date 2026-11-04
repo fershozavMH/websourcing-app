@@ -1,6 +1,12 @@
 export const SYSTEM_LOGS_COLLECTION = 'system_logs';
 export const MONITOREO_ADMINS_COLLECTION = 'monitoreo_admins';
 
+// Agente SCH (GoHighLevel): quién puede aprobar equipos y qué equipos están
+// aprobados para ofrecerse a prospectos. Se administran desde Monitoreo.
+export const SCH_APROBADORES_COLLECTION = 'sch_aprobadores';
+export const SCH_APROBACIONES_COLLECTION = 'sch_aprobaciones';
+export const SCH_APROBACION_DIAS = 7;
+
 export const LOG_MESSAGE_MAX_LEN = 2000;
 export const LOG_STACK_MAX_LEN = 4000;
 export const LOG_METADATA_MAX_LEN = 2000;

@@ -582,7 +582,7 @@ curl "https://websourcing-app.vercel.app/api/sch/equipos?tipo_equipo=grua_titan&
 - Solo se consideran equipos en EE. UU. con estado identificable (`ubicacion` "Ciudad, Estado", nombre o abreviatura).
 - Orden: estados prioritarios primero; el resto de EE. UU. solo completa hasta `limite` (`busqueda_ampliada: true`). Dentro de cada grupo: aprobados, capacidad más cercana, más reciente.
 - Publicaciones duplicadas (misma categoría, marca, modelo, año, ubicación y capacidad) se devuelven una sola vez.
-- `aprobado_para_mostrar` = `enviado_mvp === true` (publicado en machineryhunters.com); lo demás es `pendiente_validacion`.
+- `aprobado_para_mostrar` = existe una aprobación vigente en `sch_aprobaciones` (ver abajo); lo demás es `pendiente_validacion`.
 - El montaje de bombas se infiere del título (el scraper no lo registra). Hoy todas las bombas registradas son de pluma sobre camión.
 
 **Respuesta:** `{ status, mensaje, tipo_equipo, capacidad_solicitada, capacidad_unidad, capacidad_aplicada, busqueda_ampliada, total_encontrados, equipos[] }`.
@@ -592,7 +592,29 @@ Cada equipo: `id_equipo, tipo_equipo, tipo_equipo_nombre, marca, modelo, anio, c
 
 **Nunca se exponen** (se excluyen en el servidor): `precio` (costo real de adquisición), `precio_maximo`, `url`, `pagina`, `titulo` (puede incluir el sitio proveedor), `telefono_vendedor`, `imagenes`, márgenes/score y trazabilidad ERP/MVP. Si la ciudad trae el nombre del vendedor ("VENDEDOR – Ciudad") se recorta.
 
-Caché en memoria de 5 min por categoría. Rate limit: 20 solicitudes/min. Los 401 se registran en Monitoreo.
+Caché en memoria de 5 min por categoría (60 s para las aprobaciones). Rate limit: 20 solicitudes/min. Los 401 se registran en Monitoreo.
+
+### Aprobación de equipos para el agente SCH
+
+Un equipo solo se ofrece como disponible si un **aprobador** lo aprobó explícitamente. La aprobación vence sola a los `SCH_APROBACION_DIAS` (7) días para obligar a reconfirmar la disponibilidad.
+
+| Colección | Documento | Contenido |
+|---|---|---|
+| `sch_aprobadores` | `{email}` | `email, addedBy, addedAt, active` (al quitar: `active: false, removedBy, removedAt`) |
+| `sch_aprobaciones` | `{idMaquina}` | `aprobadoPor, aprobadoEmail, aprobadoEn, venceEn` |
+
+Las aprobaciones viven fuera de `maquinaria_aprobada` para que el scraper no las borre al reescribir documentos.
+
+| Ruta | Quién | Qué hace |
+|---|---|---|
+| `GET /api/sch/aprobaciones` | Cualquier usuario logueado | Aprobaciones vigentes y si el usuario puede aprobar (`puedeAprobar`) |
+| `POST /api/sch/aprobaciones` `{ docId, accion: 'aprobar' \| 'quitar' }` | Aprobadores activos | Aprueba (o renueva) por 7 días, o quita la aprobación. Sin permiso → 403 + log de seguridad |
+| `GET/POST/DELETE /api/sch/aprobadores` `{ email }` | Admins de Monitoreo | Lista, agrega o desactiva aprobadores |
+
+- **Tarjeta (`MachineCard`)**: los aprobadores ven en el menú ⋯ "Aprobar para agente SCH" / "Renovar" / "Quitar aprobación SCH". Todos ven la etiqueta "Aprobado SCH · vence dd/mm". El hook `useAprobacionesSch` hace una sola petición por página.
+- **Monitoreo**: panel "Aprobadores del agente SCH" para dar de alta o quitar aprobadores.
+- Cada acción queda en `system_logs` con `ACT_SCH_APROBAR`, `ACT_SCH_QUITAR` o `ACT_SCH_APROBADOR`.
+- Las escrituras pasan solo por el servidor (Admin SDK). Las Firestore Security Rules deben negar escritura desde el navegador en `sch_aprobadores` y `sch_aprobaciones`.
 
 ---
 

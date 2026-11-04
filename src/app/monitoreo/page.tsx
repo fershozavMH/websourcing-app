@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import ErroresSeguridadTab from './ErroresSeguridadTab';
 import ActividadUsuariosTab from './ActividadUsuariosTab';
 import AdminsPanel from './AdminsPanel';
+import AprobadoresSchPanel from './AprobadoresSchPanel';
 import SaludSistemaTab from './SaludSistemaTab';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import { usePageView } from '@/hooks/usePageView';
@@ -141,6 +142,7 @@ export default function MonitoreoPage() {
         {tab === 'salud' ? <SaludSistemaTab /> : tab === 'errores' ? <ErroresSeguridadTab /> : <ActividadUsuariosTab />}
 
         <AdminsPanel />
+        <AprobadoresSchPanel />
       </div>
     </div>
   );

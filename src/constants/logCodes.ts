@@ -25,6 +25,9 @@ export const LOG_CODES = {
   ACT_SEND_ERP: 'ACT_SEND_ERP',
   ACT_SESSION_TIMEOUT: 'ACT_SESSION_TIMEOUT',
   ACT_PAGE_VIEW: 'ACT_PAGE_VIEW',
+  ACT_SCH_APROBAR: 'ACT_SCH_APROBAR',
+  ACT_SCH_QUITAR: 'ACT_SCH_QUITAR',
+  ACT_SCH_APROBADOR: 'ACT_SCH_APROBADOR',
 } as const;
 
 export type LogCode = (typeof LOG_CODES)[keyof typeof LOG_CODES];
@@ -47,6 +50,9 @@ export const LOG_CODE_TO_CATEGORY: Record<LogCode, LogCategory> = {
   ACT_SEND_ERP: 'activity',
   ACT_SESSION_TIMEOUT: 'activity',
   ACT_PAGE_VIEW: 'activity',
+  ACT_SCH_APROBAR: 'activity',
+  ACT_SCH_QUITAR: 'activity',
+  ACT_SCH_APROBADOR: 'activity',
 };
 
 export function isKnownLogCode(code: string): code is LogCode {

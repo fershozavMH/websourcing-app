@@ -6,6 +6,7 @@ import { FIREBASE_COLLECTION } from '@/constants/appConfig';
 import { resolverTipoEquipo, tipoDeEquipo, montajeDeBomba, SLUGS_VALIDOS, type TipoEquipo } from '@/lib/sch/tiposEquipo';
 import { parseCapacidad, esCapacidadCompatible, type Capacidad } from '@/lib/sch/capacidad';
 import { parseUbicacion, type Ubicacion } from '@/lib/sch/ubicacion';
+import { cargarAprobacionesVigentes } from '@/lib/sch/aprobaciones';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +46,10 @@ interface Registro {
   data: Record<string, unknown>;
   capacidad: Capacidad | null;
   ubicacion: Ubicacion;
-  aprobado: boolean;
   recencia: number;
 }
+
+type RegistroEvaluado = Registro & { aprobado: boolean };
 
 const texto = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
 
@@ -80,8 +82,6 @@ const cargarRegistros = async (categorias: ReadonlyArray<string>): Promise<Regis
       data,
       capacidad: parseCapacidad(data.capacidad),
       ubicacion: parseUbicacion(data.ubicacion),
-      // Aprobado = publicado en machineryhunters.com
-      aprobado: data.enviado_mvp === true,
       recencia: recenciaDe(data.timestamp),
     };
   });
@@ -89,7 +89,7 @@ const cargarRegistros = async (categorias: ReadonlyArray<string>): Promise<Regis
   return registros;
 };
 
-const aEquipoSch = (r: Registro, tipoBuscado: TipoEquipo): EquipoSch => {
+const aEquipoSch = (r: RegistroEvaluado, tipoBuscado: TipoEquipo): EquipoSch => {
   const tipo = tipoDeEquipo(r.categoria, r.titulo) ?? tipoBuscado;
   const anio = r.data['año'];
   return {
@@ -123,7 +123,7 @@ const errorSch = (mensaje: string, status: number, extra: Record<string, unknown
 
 // El scraper a veces guarda la misma publicación más de una vez; no se ofrecen
 // dos "opciones" que son el mismo equipo. Se conserva la primera (ya ordenada).
-const sinDuplicados = (registros: Registro[]): Registro[] => {
+const sinDuplicados = (registros: RegistroEvaluado[]): RegistroEvaluado[] => {
   const vistos = new Set<string>();
   return registros.filter(r => {
     const d = r.data;
@@ -164,16 +164,22 @@ export async function GET(request: Request) {
   const capacidadAplicada = capacidadReq !== null && tipo.unidad !== null;
 
   try {
-    const registros = await cargarRegistros(tipo.categorias);
+    const [registros, aprobaciones] = await Promise.all([
+      cargarRegistros(tipo.categorias),
+      cargarAprobacionesVigentes(),
+    ]);
 
-    const compatibles = registros.filter(r =>
-      (!tipo.montajeBomba || montajeDeBomba(r.titulo) === tipo.montajeBomba) &&
-      (!capacidadAplicada || esCapacidadCompatible(r.capacidad, capacidadReq!, tipo.unidad!)) &&
-      // Solo Estados Unidos y con un estado identificable
-      r.ubicacion.pais === 'USA' && r.ubicacion.estado !== null,
-    );
+    const compatibles = registros
+      .filter(r =>
+        (!tipo.montajeBomba || montajeDeBomba(r.titulo) === tipo.montajeBomba) &&
+        (!capacidadAplicada || esCapacidadCompatible(r.capacidad, capacidadReq!, tipo.unidad!)) &&
+        // Solo Estados Unidos y con un estado identificable
+        r.ubicacion.pais === 'USA' && r.ubicacion.estado !== null,
+      )
+      // Aprobado = alguien autorizado lo aprobó para el agente y no ha vencido
+      .map((r): RegistroEvaluado => ({ ...r, aprobado: aprobaciones.has(r.id) }));
 
-    const ordenar = (a: Registro, b: Registro) =>
+    const ordenar = (a: RegistroEvaluado, b: RegistroEvaluado) =>
       Number(b.aprobado) - Number(a.aprobado) ||
       (capacidadAplicada ? (a.capacidad!.valor - b.capacidad!.valor) : 0) ||
       b.recencia - a.recencia;
