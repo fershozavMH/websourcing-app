@@ -14,6 +14,8 @@ const CREDENCIALES_ERP: Record<string, { key: string; secret: string }> = {
   'raul@machineryhunters.com':     { key: process.env.ERP_API_KEY_RAUL     ?? '', secret: process.env.ERP_API_SECRET_RAUL     ?? '' },
   'glenn@machineryhunters.com':    { key: process.env.ERP_API_KEY_GLENN    ?? '', secret: process.env.ERP_API_SECRET_GLENN    ?? '' },
   'carlos@machineryhunters.com':   { key: process.env.ERP_API_KEY_CAMPILLO ?? '', secret: process.env.ERP_API_SECRET_CAMPILLO ?? '' },
+  'jorge@machineryhunters.com':    { key: process.env.ERP_API_KEY_JORGE    ?? '', secret: process.env.ERP_API_SECRET_JORGE    ?? '' }
+
 };
 
 // Categorías cuyo equipo tiene chassis de camión (rellenan la sección "Informacion del Camion")
@@ -360,7 +362,7 @@ ENVIADO POR: ${usuarioSourcing}`;
       sub_categoria_equipo:    subCategoriaERP,
 
       // Subasta
-      custom_enlace: maquina.url || '',
+      enlace_web_sourcing_live: maquina.url || '',
       ...(esSubasta && {
         custom_subasta:  getSubastaSite(maquina.pagina || ''),
         subasta_inicia:  maquina.subasta_inicia || '',
