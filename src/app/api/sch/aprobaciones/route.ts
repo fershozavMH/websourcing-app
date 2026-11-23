@@ -5,6 +5,7 @@ import { requireAuthenticatedUser } from '@/lib/apiAuth';
 import { getClientIp } from '@/lib/monitoreo/auth';
 import { writeLog } from '@/lib/monitoreo/writeLog';
 import { LOG_CODES } from '@/constants/logCodes';
+import { puedeEnviarMvp } from '@/constants/usuarios';
 import { FIREBASE_COLLECTION } from '@/constants/appConfig';
 import { SCH_APROBACIONES_COLLECTION, SCH_APROBACION_DIAS } from '@/constants/monitoreo';
 import { cargarAprobacionesVigentes, invalidarAprobacionesSch, isSchAprobador } from '@/lib/sch/aprobaciones';
@@ -22,7 +23,12 @@ export async function GET(request: Request) {
       cargarAprobacionesVigentes(),
       isSchAprobador(guard.email),
     ]);
-    return NextResponse.json({ success: true, puedeAprobar, aprobaciones: Object.fromEntries(vigentes) });
+    return NextResponse.json({
+      success: true,
+      puedeAprobar,
+      puedeEnviarMvp: puedeEnviarMvp(guard.email),
+      aprobaciones: Object.fromEntries(vigentes),
+    });
   } catch (error) {
     console.error('[sch/aprobaciones GET] error:', error);
     return NextResponse.json({ success: false, error: 'No se pudieron obtener las aprobaciones.' }, { status: 500 });

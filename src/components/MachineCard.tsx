@@ -19,7 +19,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
   const [enviandoMvp, setEnviandoMvp] = useState(false);
   const [guardandoSch, setGuardandoSch] = useState(false);
   const [imgErrorReported, setImgErrorReported] = useState(false);
-  const { puedeAprobar, aprobaciones, cambiarAprobacion } = useAprobacionesSch();
+  const { puedeAprobar, puedeEnviarMvp, aprobaciones, cambiarAprobacion } = useAprobacionesSch();
   const aprobacionVista = aprobaciones[machine.id];
   // Una aprobación que vence con la página abierta deja de mostrarse.
   const aprobacionSch = aprobacionVista && new Date(aprobacionVista.venceEn).getTime() > Date.now() ? aprobacionVista : undefined;
@@ -224,6 +224,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
               )}
             </button>
 
+            {puedeEnviarMvp && (
             <button
               onClick={enviarAMVP}
               disabled={enviandoMvp}
@@ -255,6 +256,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
                 </>
               )}
             </button>
+            )}
 
             {puedeAprobar && (
               <>

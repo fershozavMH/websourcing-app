@@ -10,12 +10,13 @@ export interface AprobacionSch {
 
 interface EstadoAprobaciones {
   puedeAprobar: boolean;
+  puedeEnviarMvp: boolean;
   aprobaciones: Record<string, AprobacionSch>;
 }
 
 // Estado compartido por todas las tarjetas: una sola petición por página en
 // lugar de una por máquina, y al aprobar desde una tarjeta se actualizan todas.
-let estado: EstadoAprobaciones = { puedeAprobar: false, aprobaciones: {} };
+let estado: EstadoAprobaciones = { puedeAprobar: false, puedeEnviarMvp: false, aprobaciones: {} };
 let carga: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 
@@ -32,7 +33,11 @@ const cargar = async () => {
   const res = await fetch('/api/sch/aprobaciones', { headers: { Authorization: `Bearer ${token}` } });
   const data = await res.json().catch(() => null);
   if (data?.success) {
-    estado = { puedeAprobar: !!data.puedeAprobar, aprobaciones: data.aprobaciones ?? {} };
+    estado = {
+      puedeAprobar: !!data.puedeAprobar,
+      puedeEnviarMvp: !!data.puedeEnviarMvp,
+      aprobaciones: data.aprobaciones ?? {},
+    };
     notificar();
   }
 };

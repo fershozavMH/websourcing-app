@@ -13,6 +13,18 @@ export const NOMBRES_USUARIOS: Record<string, string> = {
   'daray@machineryhunters.com': 'Daray Arrellano',
   'gabriel@machineryhunters.com': 'Gabriel Buchanan',
   'carel@machineryhunters.com': 'Carel Medina',
+  'cinthya@machineryhunters.com': 'Cinthya Preciado',
   'marketing@machineryhunters.com': 'Marketing',
   'info@machineryhunters.com': 'Info',
 };
+
+// Únicos usuarios que pueden enviar equipos al MVP (el resto de sourcing solo
+// envía al ERP). Sistemas tiene acceso a todo.
+export const USUARIOS_MVP: ReadonlyArray<string> = [
+  'carel@machineryhunters.com',
+  'cinthya@machineryhunters.com',
+  'sistemas@machineryhunters.com',
+];
+
+export const puedeEnviarMvp = (email: string | null | undefined): boolean =>
+  !!email && USUARIOS_MVP.includes(email.trim().toLowerCase());

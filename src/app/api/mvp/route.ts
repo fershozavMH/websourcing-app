@@ -5,6 +5,8 @@ import { mapToMhApi } from '@/lib/mvpFieldMapper';
 import { requireAuthenticatedUser } from '@/lib/apiAuth';
 import { writeLog } from '@/lib/monitoreo/writeLog';
 import { LOG_CODES } from '@/constants/logCodes';
+import { puedeEnviarMvp } from '@/constants/usuarios';
+import { getClientIp } from '@/lib/monitoreo/auth';
 
 // Errores de validación cuyo mensaje sí es seguro mostrar al cliente.
 class RequestError extends Error {}
@@ -12,6 +14,21 @@ class RequestError extends Error {}
 export async function POST(request: Request) {
   const guard = await requireAuthenticatedUser(request);
   if (!guard.ok) return guard.response;
+
+  if (!puedeEnviarMvp(guard.email)) {
+    await writeLog({
+      level: 'security',
+      category: 'security',
+      code: LOG_CODES.SEC_UNAUTHORIZED_ACCESS,
+      message: 'Usuario sin permiso intentó enviar un equipo al MVP',
+      source: 'server',
+      route: '/api/mvp',
+      userEmail: guard.email,
+      ip: getClientIp(request),
+      userAgent: request.headers.get('user-agent') ?? undefined,
+    });
+    return NextResponse.json({ success: false, error: 'No tienes permiso para enviar equipos al MVP.' }, { status: 403 });
+  }
 
   try {
     const body = await request.json().catch(() => null);

@@ -9,7 +9,11 @@ export interface AprobacionSch {
   venceEn: string;      // ISO
 }
 
+// Sistemas siempre puede aprobar, sin depender de que esté dado de alta en Firestore.
+const SCH_SIEMPRE_APROBADOR = 'sistemas@machineryhunters.com';
+
 export async function isSchAprobador(email: string): Promise<boolean> {
+  if (email.trim().toLowerCase() === SCH_SIEMPRE_APROBADOR) return true;
   const doc = await getFirestore().collection(SCH_APROBADORES_COLLECTION).doc(email.toLowerCase()).get();
   return doc.exists && doc.data()?.active === true;
 }
