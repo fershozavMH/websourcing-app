@@ -8,6 +8,7 @@ import ErroresSeguridadTab from './ErroresSeguridadTab';
 import ActividadUsuariosTab from './ActividadUsuariosTab';
 import AdminsPanel from './AdminsPanel';
 import AprobadoresSchPanel from './AprobadoresSchPanel';
+import SincronizacionErpPanel from './SincronizacionErpPanel';
 import SaludSistemaTab from './SaludSistemaTab';
 import { useInactivityLogout } from '@/hooks/useInactivityLogout';
 import { usePageView } from '@/hooks/usePageView';
@@ -143,6 +144,7 @@ export default function MonitoreoPage() {
 
         <AdminsPanel />
         <AprobadoresSchPanel />
+        <SincronizacionErpPanel />
       </div>
     </div>
   );

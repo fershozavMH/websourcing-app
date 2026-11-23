@@ -14,6 +14,7 @@ export const LOG_CODES = {
   ERR_ERP_CREDENTIALS_MISSING: 'ERR_ERP_CREDENTIALS_MISSING',
   ERR_ERP_TRACE_UPDATE_FAILED: 'ERR_ERP_TRACE_UPDATE_FAILED',
   ERR_ERP_IMAGE_UPLOAD_FAILED: 'ERR_ERP_IMAGE_UPLOAD_FAILED',
+  ERR_ERP_SYNC: 'ERR_ERP_SYNC',
   ERR_PORTAFOLIO_LOAD: 'ERR_PORTAFOLIO_LOAD',
   ERR_IMAGE_LOAD: 'ERR_IMAGE_LOAD',
   ERR_UNCAUGHT_CLIENT: 'ERR_UNCAUGHT_CLIENT',
@@ -28,6 +29,7 @@ export const LOG_CODES = {
   ACT_SCH_APROBAR: 'ACT_SCH_APROBAR',
   ACT_SCH_QUITAR: 'ACT_SCH_QUITAR',
   ACT_SCH_APROBADOR: 'ACT_SCH_APROBADOR',
+  ACT_ERP_SYNC: 'ACT_ERP_SYNC',
 } as const;
 
 export type LogCode = (typeof LOG_CODES)[keyof typeof LOG_CODES];
@@ -39,6 +41,7 @@ export const LOG_CODE_TO_CATEGORY: Record<LogCode, LogCategory> = {
   ERR_ERP_CREDENTIALS_MISSING: 'error',
   ERR_ERP_TRACE_UPDATE_FAILED: 'error',
   ERR_ERP_IMAGE_UPLOAD_FAILED: 'error',
+  ERR_ERP_SYNC: 'error',
   ERR_PORTAFOLIO_LOAD: 'error',
   ERR_IMAGE_LOAD: 'error',
   ERR_UNCAUGHT_CLIENT: 'error',
@@ -53,6 +56,7 @@ export const LOG_CODE_TO_CATEGORY: Record<LogCode, LogCategory> = {
   ACT_SCH_APROBAR: 'activity',
   ACT_SCH_QUITAR: 'activity',
   ACT_SCH_APROBADOR: 'activity',
+  ACT_ERP_SYNC: 'activity',
 };
 
 export function isKnownLogCode(code: string): code is LogCode {
