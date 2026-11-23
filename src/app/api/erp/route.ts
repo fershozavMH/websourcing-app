@@ -46,14 +46,14 @@ const CATEGORIA_MAP: Record<string, string> = {
   'Elevadores':        'ELEVACION',
 };
 
-// UOM de capacidad de carga por categoría
+// UOM de capacidad de carga por categoría (deben existir tal cual en el doctype UOM del ERP)
 const CAPACIDAD_UOM: Record<string, string> = {
-  'Camiones Trompo':   'Yardas',
-  'Camiones Volteo':   'Yardas',
+  'Camiones Trompo':   'Yarda',
+  'Camiones Volteo':   'Yarda',
   'Camiones Pipa':     'Galones',
-  'Gruas Titanes':     'Toneladas',
-  'Gruas Articuladas': 'Toneladas',
-  'rough_terrain':     'Toneladas',
+  'Gruas Titanes':     'ton',
+  'Gruas Articuladas': 'ton',
+  'rough_terrain':     'ton',
 };
 
 // Normaliza la transmisión → "Manual" | "Automatico" | ""
