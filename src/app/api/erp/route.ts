@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { writeLog } from '@/lib/monitoreo/writeLog';
 import { LOG_CODES } from '@/constants/logCodes';
 import { requireAuthenticatedUser } from '@/lib/apiAuth';
+import { explicarErrorErp } from '@/lib/erp/explicarError';
 import { FIREBASE_COLLECTION, PORTAFOLIO_COLLECTION } from '@/constants/appConfig';
 
 // Credenciales de Frappe por usuario (email → api_key / api_secret)
@@ -219,6 +220,14 @@ const subirImagenAFrappe = async (
 
 // Errores de validación cuyo mensaje sí es seguro mostrar al cliente.
 class RequestError extends Error {}
+
+// Fallo del ERP: `message` conserva el detalle técnico para los logs y
+// `userMessage` es lo que se le muestra al usuario de sourcing.
+class ErpError extends Error {
+  constructor(public userMessage: string, detail: string, public status = 502) {
+    super(detail);
+  }
+}
 
 export async function POST(request: Request) {
   const guard = await requireAuthenticatedUser(request);
@@ -453,19 +462,29 @@ ENVIADO POR: ${usuarioSourcing}`;
       custom_comprador: '',
     };
 
-    const responseFrappe = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `token ${apiKey}:${apiSecret}`,
-        'Content-Type':  'application/json',
-        'Accept':        'application/json',
-      },
-      body: JSON.stringify(payloadERP),
-    });
+    let responseFrappe: Response;
+    try {
+      responseFrappe = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `token ${apiKey}:${apiSecret}`,
+          'Content-Type':  'application/json',
+          'Accept':        'application/json',
+        },
+        body: JSON.stringify(payloadERP),
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch (e: any) {
+      throw new ErpError(
+        'No se pudo conectar con el ERP (sin respuesta). Intenta de nuevo en unos minutos; si sigue igual, avisa a sistemas.',
+        `No se pudo conectar con el ERP: ${e?.message ?? e}`,
+        504,
+      );
+    }
 
     if (!responseFrappe.ok) {
       const errorData = await responseFrappe.text();
-      throw new Error(`Error del ERP: ${errorData}`);
+      throw new ErpError(explicarErrorErp(responseFrappe.status, errorData), `Error del ERP (${responseFrappe.status}): ${errorData}`);
     }
 
     const frappeResult = await responseFrappe.json();
@@ -555,6 +574,7 @@ ENVIADO POR: ${usuarioSourcing}`;
       success: true,
       id_erp:  idFrappe,
       imagenes_subidas: imagenesSubidas,
+      imagenes_total:   imagenes.length,
       audit:   `Enviado por ${usuarioSourcing}`,
     });
 
@@ -571,6 +591,9 @@ ENVIADO POR: ${usuarioSourcing}`;
     });
     if (error instanceof RequestError) {
       return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+    if (error instanceof ErpError) {
+      return NextResponse.json({ success: false, error: error.userMessage }, { status: error.status });
     }
     return NextResponse.json(
       { success: false, error: 'No se pudo completar el envío al ERP. El detalle quedó registrado en los logs.' },

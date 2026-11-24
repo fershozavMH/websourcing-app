@@ -100,12 +100,18 @@ export default function MachineCard({ machine }: { machine: Machine }) {
         if (data.ya_existia) {
           alert(`Esta máquina ya está registrada en el ERP.\nID Frappe: ${data.id_erp}`);
         } else {
-          alert(`¡Máquina enviada con éxito al ERP!\nRegistrado por: ${usuarioActual}\nID Frappe: ${data.id_erp}`);
+          const faltanFotos = typeof data.imagenes_total === 'number' && data.imagenes_subidas < data.imagenes_total;
+          alert(
+            `¡Máquina enviada con éxito al ERP!\nRegistrado por: ${usuarioActual}\nID Frappe: ${data.id_erp}` +
+            (faltanFotos
+              ? `\n\nAtención: solo se subieron ${data.imagenes_subidas} de ${data.imagenes_total} fotos. Revisa las fotos del equipo en el ERP.`
+              : ''),
+          );
         }
         (machine as any).estado_sourcing = 'enviado_erp';
         (machine as any).id_erp = data.id_erp;
       } else {
-        alert(`Error al enviar: ${data.error}`);
+        alert(`No se pudo enviar al ERP.\n\n${data.error ?? 'Error desconocido. Avisa a sistemas.'}`);
       }
     } catch (error: any) {
       console.error(error);
@@ -113,7 +119,7 @@ export default function MachineCard({ machine }: { machine: Machine }) {
         stack: error?.stack,
         metadata: { machineId: machine.id },
       });
-      alert('Hubo un problema de conexión con el servidor.');
+      alert('No se pudo enviar al ERP: no hay conexión con el servidor de Web Sourcing. Revisa tu internet e inténtalo de nuevo.');
     } finally {
       setEnviando(false);
       setMenuAbierto(false);
