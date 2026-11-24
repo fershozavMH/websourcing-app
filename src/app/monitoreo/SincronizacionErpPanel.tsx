@@ -8,7 +8,7 @@ interface Resultado {
   erpConSerie: number;
   revisados: number;
   yaMarcados: number;
-  marcados: { id: string; serie: string; id_erp: string }[];
+  marcados: { id: string; criterio: 'id' | 'url' | 'serie'; referencia: string; id_erp: string }[];
   huerfanos: { id: string; id_erp: string; serie: string }[];
 }
 
@@ -39,7 +39,7 @@ export default function SincronizacionErpPanel() {
     <div className="bg-white rounded-xl shadow-md border border-slate-200 p-5">
       <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide mb-1">Sincronización con el ERP</h3>
       <p className="text-xs text-slate-500 mb-4">
-        Marca como enviados al ERP los equipos cuyo número de serie ya existe allá. Corre automáticamente cada día; aquí puedes lanzarla al momento.
+        Marca como enviados al ERP los equipos que ya existen allá, aunque no se hayan cargado desde la app (coincide por URL de la publicación, número de serie o ID en el nombre). Corre automáticamente cada día; aquí puedes lanzarla al momento.
       </p>
 
       <button
@@ -62,7 +62,9 @@ export default function SincronizacionErpPanel() {
           {resultado.marcados.length > 0 && (
             <ul className="text-xs text-slate-600 space-y-0.5 max-h-40 overflow-auto">
               {resultado.marcados.map((m) => (
-                <li key={m.id}>{m.id} · serie {m.serie} → {m.id_erp}</li>
+                <li key={m.id}>
+                  {m.id} · por {m.criterio === 'url' ? 'URL' : m.criterio === 'serie' ? 'serie' : 'ID en el nombre'} ({m.referencia}) → {m.id_erp}
+                </li>
               ))}
             </ul>
           )}

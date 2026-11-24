@@ -98,7 +98,12 @@ export default function MachineCard({ machine }: { machine: Machine }) {
       
       if (data.success) {
         if (data.ya_existia) {
-          alert(`Esta máquina ya está registrada en el ERP.\nID Frappe: ${data.id_erp}`);
+          const motivo: Record<string, string> = {
+            id: 'fue enviada antes desde Web Sourcing',
+            url: 'coincide la URL de la publicación',
+            serie: 'coincide el número de serie',
+          };
+          alert(`Esta máquina ya está registrada en el ERP (${motivo[data.coincide_por] ?? 'ya existe'}), por eso no se volvió a crear.\nID Frappe: ${data.id_erp}`);
         } else {
           const faltanFotos = typeof data.imagenes_total === 'number' && data.imagenes_subidas < data.imagenes_total;
           alert(

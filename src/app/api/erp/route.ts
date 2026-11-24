@@ -5,6 +5,7 @@ import { writeLog } from '@/lib/monitoreo/writeLog';
 import { LOG_CODES } from '@/constants/logCodes';
 import { requireAuthenticatedUser } from '@/lib/apiAuth';
 import { explicarErrorErp } from '@/lib/erp/explicarError';
+import { buscarEquipoEnErp } from '@/lib/erp/coincidencias';
 import { FIREBASE_COLLECTION, PORTAFOLIO_COLLECTION } from '@/constants/appConfig';
 
 // Credenciales de Frappe por usuario (email → api_key / api_secret)
@@ -271,19 +272,36 @@ export async function POST(request: Request) {
       });
     }
 
-    // Verificar si ya existe en Frappe (evita duplicados)
-    if (maquina.id) {
-      const filtros = encodeURIComponent(JSON.stringify([['nombre', 'like', `%[${maquina.id}]`]]));
-      const checkRes = await fetch(`${apiUrl}?filters=${filtros}&fields=["name"]&limit=1`, {
-        headers: { 'Authorization': `token ${apiKey}:${apiSecret}`, 'Accept': 'application/json' },
-      });
-      if (checkRes.ok) {
-        const checkData = await checkRes.json();
-        if (checkData?.data?.length > 0) {
-          const idExistente = checkData.data[0].name;
-          return NextResponse.json({ success: true, id_erp: idExistente, ya_existia: true });
-        }
+    // Verificar si ya existe en Frappe (evita duplicados), aunque se haya cargado
+    // fuera de la app: por [ID] en el nombre, URL de la publicación o número de serie.
+    let existente: Awaited<ReturnType<typeof buscarEquipoEnErp>>;
+    try {
+      existente = await buscarEquipoEnErp(
+        { id: maquina.id, url: maquina.url, numeroSerie: maquina.numero_serie },
+        { apiUrl, authHeader: `token ${apiKey}:${apiSecret}` },
+      );
+    } catch (e: any) {
+      // Sin poder verificar duplicados no se crea nada: mejor reintentar que duplicar.
+      throw new ErpError(
+        'No se pudo verificar en el ERP si el equipo ya existe, así que no se envió. Intenta de nuevo en unos minutos; si sigue igual, avisa a sistemas.',
+        `Falló la verificación de duplicados en el ERP: ${e?.message ?? e}`,
+        504,
+      );
+    }
+    if (existente) {
+      // Se deja constancia en Firebase para que el equipo aparezca como enviado. Sin
+      // fecha_envio_erp ni enviado_por: no lo envió nadie desde la app.
+      try {
+        await db.collection(FIREBASE_COLLECTION).doc(machineId).update({
+          estado_sourcing: 'enviado_erp',
+          id_erp: existente.name,
+          sincronizado_erp_en: new Date().toISOString(),
+          sincronizado_erp_por: existente.criterio,
+        });
+      } catch (fbError) {
+        console.warn('El equipo ya existía en el ERP, pero no se pudo marcar en Firebase:', fbError);
       }
+      return NextResponse.json({ success: true, id_erp: existente.name, ya_existia: true, coincide_por: existente.criterio });
     }
 
     // ── Datos derivados ──────────────────────────────────────────────────────
