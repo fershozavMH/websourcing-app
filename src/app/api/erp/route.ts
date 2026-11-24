@@ -101,12 +101,53 @@ const extractModeloBomba = (titulo: string): string => {
   return palabras.slice(2).join(' ') || '';
 };
 
-// Extrae el estado/provincia → "Ciudad, Estado" → "Estado"
+// Territorios del ERP (doctype Territory) que corresponden a estados/provincias.
+// custom_territory es un Link: si el nombre no existe tal cual, Frappe rechaza el equipo.
+const TERRITORIOS_ERP = [
+  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
+  'District of Columbia', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa',
+  'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+  'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+  'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
+  'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah',
+  'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming',
+  'Alberta', 'British Columbia', 'Ontario', 'Quebec',
+  'Aguascalientes', 'Baja California Norte', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua',
+  'Ciudad de México', 'Coahuila', 'Colima', 'Durango', 'Estado de México', 'Guanajuato', 'Guerrero',
+  'Hidalgo', 'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla',
+  'Queretaro', 'Quintana Roo', 'San Luis Potosi', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas',
+  'Tlaxcala', 'Veracruz', 'Yucatán', 'Zacatecas',
+];
+
+const ABREVIATURAS_TERRITORIO: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado',
+  CT: 'Connecticut', DE: 'Delaware', DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia',
+  HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa', KS: 'Kansas', KY: 'Kentucky',
+  LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
+  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire',
+  NJ: 'New Jersey', NM: 'New Mexico', NY: 'New York', NC: 'North Carolina', ND: 'North Dakota',
+  OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island',
+  SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont',
+  VA: 'Virginia', WA: 'Washington', WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+  AB: 'Alberta', BC: 'British Columbia', ON: 'Ontario', QC: 'Quebec',
+};
+
+const TERRITORIOS_POR_NOMBRE = new Map(TERRITORIOS_ERP.map(t => [t.toLowerCase(), t]));
+
+// Estado/provincia → nombre exacto del Territory del ERP ("AZ" y "Arizona" → "Arizona").
+// Recorre la ubicación de derecha a izquierda para tolerar "Dallas, TX, USA" o "TX 75001".
+// Si no hay coincidencia devuelve '' (el campo es opcional) en vez de provocar un rechazo del ERP.
 const extractEstado = (ubicacion: string): string => {
   if (!ubicacion) return '';
-  const partes = ubicacion.split(',');
-  if (partes.length < 2) return '';
-  return partes[partes.length - 1].trim();
+  const partes = ubicacion.split(',').map(p => p.trim()).filter(Boolean);
+  for (let i = partes.length - 1; i >= 0; i--) {
+    const parte = partes[i].replace(/\s+\d{4,5}(-\d{4})?$/, '').trim();
+    const porAbrev = ABREVIATURAS_TERRITORIO[parte.toUpperCase()];
+    if (porAbrev) return porAbrev;
+    const porNombre = TERRITORIOS_POR_NOMBRE.get(parte.toLowerCase());
+    if (porNombre) return porNombre;
+  }
+  return '';
 };
 
 // Extrae la ciudad → "Ciudad, Estado" → "Ciudad"
